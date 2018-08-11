@@ -12,7 +12,7 @@ NOTE: The code requires Python version 3.6+.
 Install [Lattice Microbes & pyLM](http://www.scs.illinois.edu/schulten/lm/index.html). Then apply the patch code:`pylm-builder.patch` in the Main folder by executing:
 
 ``` bash
-    git apply
+    git apply pylm-builder.patch
 ````
 
 No additional dependencies above those required by Lattice Microbes and pyLM are needed for HeLa. Once done, the HeLa cell package can be installed simply by executing:
