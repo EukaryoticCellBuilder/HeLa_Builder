@@ -1,0 +1,1773 @@
+From 374bb7a01514c036301d60cda2dd4e33bccb492c Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Tue, 20 Dec 2016 17:03:57 -0600
+Subject: [PATCH 03/71] Fixed bug in igraph code. Thanks Zhaleh for pointing it
+ out.
+
+---
+ src/python/pySTDLM/NetworkVisualization.py | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/src/python/pySTDLM/NetworkVisualization.py b/src/python/pySTDLM/NetworkVisualization.py
+index 22bd0f2..e16c5f4 100644
+--- a/src/python/pySTDLM/NetworkVisualization.py
++++ b/src/python/pySTDLM/NetworkVisualization.py
+@@ -113,20 +113,20 @@ def plotCMEReactionNetwork(sim, filename, withRxnNodes=False, collapseReversible
+ 			# Add reactants
+ 			if isinstance(rxn[0], tuple):
+ 				rctnum=ss.index(r)
+-				g.add_edges((rctnum+nr,count))
++				g.add_edges([(rctnum+nr,count)])
+ 			else:
+ 				if rxn[0] != '': # FIXME
+ 					rctnum=ss.index(rxn[0])
+-					g.add_edges((rctnum+nr,count))
++					g.add_edges([(rctnum+nr,count)])
+ 			# Add products
+ 			if isinstance(rxn[1], tuple):
+ 				for p in rxn[1]:
+ 					pdtnum=ss.index(p)
+-					g.add_edges((count, pdtnum+nr))
++					g.add_edges([(count, pdtnum+nr)])
+ 			else:
+ 				if rxn[1] != '': # FIXME
+ 					pdtnum=ss.index(rxn[1])
+-					g.add_edges((count, pdtnum+nr))
++					g.add_edges([(count, pdtnum+nr)])
+ 
+ 			count+=1	
+ 	else:
+@@ -137,21 +137,21 @@ def plotCMEReactionNetwork(sim, filename, withRxnNodes=False, collapseReversible
+ 					if isinstance(rxn[1],tuple):
+ 						for p in rxn[1]:
+ 							prdnum=ss.index(p)
+-							g.add_edges((rctnum,prdnum))
++							g.add_edges([(rctnum,prdnum)])
+ 					else:
+ 						if rxn[1] != '': # FIXME
+ 							prdnum=ss.index(rxn[1])
+-							g.add_edges((rctnum,prdnum))
++							g.add_edges([(rctnum,prdnum)])
+ 			else:
+ 				rctnum=ss.index(rxn[0])
+ 				if isinstance(rxn[1],tuple):
+ 					for p in rxn[1]:
+ 						prdnum=ss.index(p)
+-						g.add_edges((rctnum,prdnum))
++						g.add_edges([(rctnum,prdnum)])
+ 				else:
+ 					if rxn[1] != '': # FIXME
+ 						prdnum=ss.index(rxn[1])
+-						g.add_edges((rctnum,prdnum))
++						g.add_edges([(rctnum,prdnum)])
+ 				
+ 
+ 	# Save the graph...
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 55512d056e7c6a0ffa4cfd686b3090083ab7e67f Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Wed, 21 Dec 2016 18:03:02 -0600
+Subject: [PATCH 04/71] Added support for hemisphere back in.
+
+---
+ src/c/lm/builder/LatticeBuilder.cpp | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/src/c/lm/builder/LatticeBuilder.cpp b/src/c/lm/builder/LatticeBuilder.cpp
+index b7a2f2b..089a65d 100644
+--- a/src/c/lm/builder/LatticeBuilder.cpp
++++ b/src/c/lm/builder/LatticeBuilder.cpp
+@@ -353,7 +353,7 @@ void LatticeBuilder::getSpatialModel(SpatialModel * spatialModel)
+ 			spatialModel->add_region();
+ 			uint i = spatialModel->region_size()-1;
+ 			if (shape->getShapeType() == Shape::SPHERE) 
+-                   	{
++            {
+ 				Sphere *sphere = (Sphere *)shape;
+ 				spatialModel->mutable_region(i)->set_shape(sphere->getShapeType());
+ 				spatialModel->mutable_region(i)->set_site_type(sphere->getType());
+@@ -361,7 +361,20 @@ void LatticeBuilder::getSpatialModel(SpatialModel * spatialModel)
+ 				spatialModel->mutable_region(i)->add_shape_parameter(sphere->getCenter().y);
+ 				spatialModel->mutable_region(i)->add_shape_parameter(sphere->getCenter().z);
+ 				spatialModel->mutable_region(i)->add_shape_parameter(sphere->getRadius());;
+-                        }
++            }
++            else if (shape->getShapeType() == Shape::HEMISPHERE)
++            {
++                Hemisphere * hemisphere = (Hemisphere *)shape;
++                spatialModel->mutable_region(i)->set_shape(hemisphere->getShapeType());
++                spatialModel->mutable_region(i)->set_site_type(hemisphere->getType());
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getCenter().x);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getCenter().y);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getCenter().z);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getOrientation().x);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getOrientation().y);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getOrientation().z);
++                spatialModel->mutable_region(i)->add_shape_parameter(hemisphere->getRadius());
++            }
+ 			else if (shape->getShapeType() == Shape::CAPSULE)
+ 			{
+ 				Capsule * capsule = (Capsule *)shape;
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 82b1aae16cfd4f71a2f28747e6099cd22b986549 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Thu, 22 Dec 2016 12:28:05 -0600
+Subject: [PATCH 05/71] Fixed the hemisphere/point intersection code.
+
+---
+ src/c/lm/builder/Hemisphere.cpp | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/c/lm/builder/Hemisphere.cpp b/src/c/lm/builder/Hemisphere.cpp
+index 23072f0..7b9b8d5 100644
+--- a/src/c/lm/builder/Hemisphere.cpp
++++ b/src/c/lm/builder/Hemisphere.cpp
+@@ -46,7 +46,7 @@ namespace lm {
+ namespace builder {
+ 
+ Hemisphere::Hemisphere(point center, si_dist_t radius, vector orientation, site_t type)
+-:Shape(HEMISPHERE,bounding_box(point(center.x-radius, center.y-radius, center.z-radius),point(center.x+radius, center.y+radius, center.z+radius)), type, orientation, vector::findPerpendicularVector(orientation)),center(center),radius(radius)
++:Shape(HEMISPHERE,bounding_box(point(center.x-radius, center.y-radius, center.z-radius),point(center.x+radius, center.y+radius, center.z+radius)), type, orientation, vector::findPerpendicularVector(orientation)),center(center),radius(radius),orientation(orientation)
+ {
+ }
+ 
+@@ -71,6 +71,13 @@ bool Hemisphere::intersects(Shape * query)
+ bool Hemisphere::contains(point query)
+ {
+     // FIXME: NEEDS TO BE IMPLEMENTED //
++    if( center.distanceSquared(query) <= radius*radius ) {
++        vector vec = vector(center, query);
++        if( orientation.dot(vec) >= 0) {
++            return true;
++        }
++    }
++
+ 	return false;
+ }
+ 
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 1f38d1568e8ad19a737326c30201c65f2169f354 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Fri, 23 Dec 2016 12:14:50 -0600
+Subject: [PATCH 06/71] Added a cone to the builder code.
+
+---
+ src/c/lm/builder/Cone.cpp | 96 ++++++++++++++++++++++++++++++++++++++++++++++
+ src/c/lm/builder/Cone.h   | 97 +++++++++++++++++++++++++++++++++++++++++++++++
+ src/c/subdir.mk           |  2 +
+ src/swig/lm.i             | 14 +++++++
+ 4 files changed, 209 insertions(+)
+ create mode 100644 src/c/lm/builder/Cone.cpp
+ create mode 100644 src/c/lm/builder/Cone.h
+
+diff --git a/src/c/lm/builder/Cone.cpp b/src/c/lm/builder/Cone.cpp
+new file mode 100644
+index 0000000..7a63195
+--- /dev/null
++++ b/src/c/lm/builder/Cone.cpp
+@@ -0,0 +1,96 @@
++/*
++ * University of Illinois Open Source License
++ * Copyright 2011-2016 Luthey-Schulten Group,
++ * All rights reserved.
++ *
++ * Developed by: Luthey-Schulten Group
++ *               University of Illinois at Urbana-Champaign
++ *               http://www.scs.uiuc.edu/~schulten
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy of
++ * this software and associated documentation files (the Software), to deal with
++ * the Software without restriction, including without limitation the rights to
++ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
++ * of the Software, and to permit persons to whom the Software is furnished to
++ * do so, subject to the following conditions:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimers.
++ *
++ * - Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * - Neither the names of the Luthey-Schulten Group, University of Illinois at
++ * Urbana-Champaign, nor the names of its contributors may be used to endorse or
++ * promote products derived from this Software without specific prior written
++ * permission.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
++ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ * OTHER DEALINGS WITH THE SOFTWARE.
++ *
++ * Author(s): Joseph R. Peterson
++ */
++
++#include "lm/builder/Shape.h"
++#include "lm/builder/Cone.h"
++#include "lm/rdme/Lattice.h"
++
++namespace lm {
++namespace builder {
++
++    Cone::Cone(point center, si_dist_t radius, si_dist_t height, site_t type, vector normal)
++    :Shape(SPHERE,
++          bounding_box(point(center.x-2.0*max(radius,height), center.y-2.0*max(radius,height), center.z-2.0*max(radius,height))
++                      ,point(center.x+2.0*max(radius,height), center.y+2.0*max(radius,height), center.z+2.0*max(radius,height)))
++          ,type)
++    ,radius(radius)
++    ,height(height)
++    ,normal(normal) 
++    {
++    }
++
++    Cone::~Cone() {
++    }
++    
++    bool Cone::intersects(Shape * query) {
++        // TODO: implement
++        return false;
++    }
++
++    bool Cone::contains(point query) {
++       // 1) Compute projection onto normal to get length
++       double proj = normal.dot(vector(center, query));
++       // 2) Check if "below" base or "above" apex
++       if(proj < 0.0 || proj > height)
++           return false;
++       // 3) Find scaled center (e.g. how far up the center spine)
++       vector c_prime = vector(center.plus(normal.scale(proj).toPoint()));
++       // 4) Find angle of cone
++       double angle = atan(radius/height);
++       // 5) Find scaled radius
++       double r_prime = (height-c_prime.length())*tan(angle);
++       // 6) compute distance to scaled center
++       if(c_prime.toPoint().distanceSquared(query) <= r_prime*r_prime)
++           return true;
++
++       return false;
++    }
++
++    bool Cone::contains(Shape * query) {
++        // TODO: implement
++        return false;
++    }
++
++    double Cone::getVolume() {
++       return 1.0/3.0*(PI*radius*radius)*height;
++    }
++
++}
++}
++
+diff --git a/src/c/lm/builder/Cone.h b/src/c/lm/builder/Cone.h
+new file mode 100644
+index 0000000..c00b214
+--- /dev/null
++++ b/src/c/lm/builder/Cone.h
+@@ -0,0 +1,97 @@
++/*
++ * University of Illinois Open Source License
++ * Copyright 2011-2016 Luthey-Schulten Group,
++ * All rights reserved.
++ *
++ * Developed by: Luthey-Schulten Group
++ *               University of Illinois at Urbana-Champaign
++ *               http://www.scs.uiuc.edu/~schulten
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy of
++ * this software and associated documentation files (the Software), to deal with
++ * the Software without restriction, including without limitation the rights to
++ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
++ * of the Software, and to permit persons to whom the Software is furnished to
++ * do so, subject to the following conditions:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimers.
++ *
++ * - Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * - Neither the names of the Luthey-Schulten Group, University of Illinois at
++ * Urbana-Champaign, nor the names of its contributors may be used to endorse or
++ * promote products derived from this Software without specific prior written
++ * permission.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
++ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ * OTHER DEALINGS WITH THE SOFTWARE.
++ *
++ * Author(s): Joseph R. Peterson
++ */
++
++#ifndef LM_BUILDER_CONE_H_
++#define LM_BUILDER_CONE_H_
++
++#include "lm/builder/Shape.h"
++#include "lm/rdme/Lattice.h"
++
++namespace lm {
++namespace builder {
++
++/// @class Cone
++/// @brief A Shape that represents a Cone
++class Cone : public Shape
++{
++public:
++    /// @brief Create a Cone
++    /// @param center Point center of the circle of the base
++    /// @param radius Radius of the base
++    /// @param height Height of the cone
++    /// @param type The type of the sites within the cone
++    /// @param normal Normal to the center of the cone base
++    Cone(point center, si_dist_t radius, si_dist_t height, site_t type, vector normal = vector(1.0,0.0,0.0));
++    /// @brief Destroy the Sphere
++    virtual ~Cone();
++    
++    /// @brief Check if two shapes intersect
++    /// @param query The other shape to check
++    /// @return true/false
++    virtual bool intersects(Shape * query);
++    /// @brief Determine if the shape contains the specified point
++    /// @param query Point to test
++    /// @return true/false
++    virtual bool contains(point query);
++    /// @brief Determine if the shape contains the specified shape
++    /// @param query Shape to test
++    /// @return true/false
++    virtual bool contains(Shape * query);
++    /// @brief Get the center of the cone
++    virtual point getCenter() {return center;}
++    /// @brief Get the radius of the cone
++    virtual si_dist_t getRadius() {return radius;}
++    /// @brief Get the height of the cone
++    virtual si_dist_t getHeight() {return height;}
++    /// @brief Get the volume bounded by the cone
++    virtual double getVolume();
++
++protected:
++    point center;
++    si_dist_t radius;
++    si_dist_t height;
++    vector normal;
++
++};
++
++
++}
++}
++
++#endif
+diff --git a/src/c/subdir.mk b/src/c/subdir.mk
+index ded1ce8..6965de4 100644
+--- a/src/c/subdir.mk
++++ b/src/c/subdir.mk
+@@ -41,6 +41,7 @@ OBJS += \
+ ./$(BUILD_DIR)/src/c/lm/builder/Torus.o \
+ ./$(BUILD_DIR)/src/c/lm/builder/Ellipse.o \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cylinder.o \
++./$(BUILD_DIR)/src/c/lm/builder/Cone.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/CMESolver.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/FluctuatingNRSolver.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/GillespieDSolver.o \
+@@ -92,6 +93,7 @@ CPP_DEPS += \
+ ./$(BUILD_DIR)/src/c/lm/builder/Difference.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Torus.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cylinder.d \
++./$(BUILD_DIR)/src/c/lm/builder/Cone.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Ellipse.d \
+ ./$(BUILD_DIR)/src/c/lm/cme/CMESolver.d \
+ ./$(BUILD_DIR)/src/c/lm/cme/FluctuatingNRSolver.d \
+diff --git a/src/swig/lm.i b/src/swig/lm.i
+index 6e07942..d87023d 100644
+--- a/src/swig/lm.i
++++ b/src/swig/lm.i
+@@ -32,6 +32,7 @@
+ #include "lm/builder/Torus.h"
+ #include "lm/builder/Ellipse.h"
+ #include "lm/builder/Cylinder.h"
++#include "lm/builder/Cone.h"
+ #include "lm/builder/Intersection.h"
+ #include "lm/io/DiffusionModel.pb.h"
+ #include "lm/io/ReactionModel.pb.h"
+@@ -441,6 +442,19 @@ public:
+     virtual si_dist_t getRadius();
+ };
+ 
++class Cone : public Shape
++{
++public:
++    Cone(point center, si_dist_t radius, si_dist_t height, site_t type, vector normal = vector(0.0, 0.0, 1.0));
++    virtual ~Cone();
++    virtual bool intersects(Shape * query);
++    virtual bool contains(Shape * query);
++    virtual point getCenter();
++    virtual si_dist_t getRadius();
++    virtual si_dist_t getHeight();
++};
++
++
+ class CapsuleShell : public Shape
+ {
+ public:
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 0142709f8b643714b685c46d735d1c9317f0fc13 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Tue, 27 Dec 2016 12:08:46 -0600
+Subject: [PATCH 07/71] modified:   src/c/lm/builder/Shape.cpp Fixed a bug in
+ discretizing where (-) values would short circuit loop because they were cast
+ to uint.
+
+modified:   src/c/lm/builder/Shape.h
+modified:   src/c/lm/builder/Cone.cpp
+modified:   src/c/lm/builder/LatticeBuilder.cpp
+Support for Cone geometries.
+
+modified:   src/python/Examples/example-shapes.py
+Reorganized shape drawing test code.
+---
+ src/c/lm/builder/Cone.cpp             | 26 ++++-----
+ src/c/lm/builder/LatticeBuilder.cpp   | 12 +++++
+ src/c/lm/builder/Shape.cpp            |  6 +--
+ src/c/lm/builder/Shape.h              |  3 +-
+ src/python/Examples/example-shapes.py | 99 +++++++++++++++++++++--------------
+ 5 files changed, 92 insertions(+), 54 deletions(-)
+
+diff --git a/src/c/lm/builder/Cone.cpp b/src/c/lm/builder/Cone.cpp
+index 7a63195..f4d66c4 100644
+--- a/src/c/lm/builder/Cone.cpp
++++ b/src/c/lm/builder/Cone.cpp
+@@ -44,14 +44,15 @@
+ namespace lm {
+ namespace builder {
+ 
+-    Cone::Cone(point center, si_dist_t radius, si_dist_t height, site_t type, vector normal)
+-    :Shape(SPHERE,
+-          bounding_box(point(center.x-2.0*max(radius,height), center.y-2.0*max(radius,height), center.z-2.0*max(radius,height))
+-                      ,point(center.x+2.0*max(radius,height), center.y+2.0*max(radius,height), center.z+2.0*max(radius,height)))
+-          ,type)
+-    ,radius(radius)
+-    ,height(height)
+-    ,normal(normal) 
++    Cone::Cone(point _center, si_dist_t _radius, si_dist_t _height, site_t _type, vector _normal)
++    :Shape(CONE
++          ,bounding_box(point(_center.x-2.0*::max(_radius,_height), _center.y-2.0*::max(_radius,_height), _center.z-2.0*::max(_radius,_height))
++                       ,point(_center.x+2.0*::max(_radius,_height), _center.y+2.0*::max(_radius,_height), _center.z+2.0*::max(_radius,_height)))
++          ,_type)
++    ,center(_center)
++    ,radius(_radius)
++    ,height(_height)
++    ,normal(_normal.unitize()) 
+     {
+     }
+ 
+@@ -65,16 +66,17 @@ namespace builder {
+ 
+     bool Cone::contains(point query) {
+        // 1) Compute projection onto normal to get length
+-       double proj = normal.dot(vector(center, query));
++       double proj = vector(center, query).dot(normal);
+        // 2) Check if "below" base or "above" apex
+        if(proj < 0.0 || proj > height)
+            return false;
+        // 3) Find scaled center (e.g. how far up the center spine)
+-       vector c_prime = vector(center.plus(normal.scale(proj).toPoint()));
+-       // 4) Find angle of cone
++       vector h_prime = normal.scale(proj);
++       vector c_prime = vector(center.plus(h_prime.toPoint()));
++       // 4) Find half angle of cone
+        double angle = atan(radius/height);
+        // 5) Find scaled radius
+-       double r_prime = (height-c_prime.length())*tan(angle);
++       double r_prime = (height-h_prime.length())*tan(angle);
+        // 6) compute distance to scaled center
+        if(c_prime.toPoint().distanceSquared(query) <= r_prime*r_prime)
+            return true;
+diff --git a/src/c/lm/builder/LatticeBuilder.cpp b/src/c/lm/builder/LatticeBuilder.cpp
+index 089a65d..cd9ab83 100644
+--- a/src/c/lm/builder/LatticeBuilder.cpp
++++ b/src/c/lm/builder/LatticeBuilder.cpp
+@@ -43,6 +43,7 @@
+ #include "lm/Math.h"
+ #include "lm/Print.h"
+ #include "lm/Tune.h"
++#include "lm/builder/Cone.h"
+ #include "lm/builder/Capsule.h"
+ #include "lm/builder/CapsuleShell.h"
+ #include "lm/builder/Cuboid.h"
+@@ -502,6 +503,17 @@ void LatticeBuilder::getSpatialModel(SpatialModel * spatialModel)
+ 				spatialModel->mutable_region(i)->add_shape_parameter(cylObj->getP2().z);
+ 				spatialModel->mutable_region(i)->add_shape_parameter(cylObj->getRadius());
+ 			}
++            else if (shape->getShapeType() == Shape::CONE)
++            {
++                Cone * coneObj = (Cone *)shape;
++                spatialModel->mutable_region(i)->set_shape(coneObj->getShapeType());
++                spatialModel->mutable_region(i)->set_site_type(coneObj->getType());
++                spatialModel->mutable_region(i)->add_shape_parameter(coneObj->getCenter().x);
++                spatialModel->mutable_region(i)->add_shape_parameter(coneObj->getCenter().y);
++                spatialModel->mutable_region(i)->add_shape_parameter(coneObj->getCenter().z);
++                spatialModel->mutable_region(i)->add_shape_parameter(coneObj->getRadius());
++                spatialModel->mutable_region(i)->add_shape_parameter(coneObj->getHeight());
++            }
+ 			else
+ 			{
+ 				throw Exception("Unsupported shape type.");
+diff --git a/src/c/lm/builder/Shape.cpp b/src/c/lm/builder/Shape.cpp
+index 0c925f9..15bd449 100644
+--- a/src/c/lm/builder/Shape.cpp
++++ b/src/c/lm/builder/Shape.cpp
+@@ -168,11 +168,11 @@ bool Shape::boundingBoxesIntersect(Shape * query)
+ void Shape::discretizeTo(lm::rdme::Lattice * lattice)
+ {
+ 	// Get the starting and ending subvolumes coordinates.
+-	lattice_size_t x1 = (lattice_size_t)floor(boundingBox.min.x/lattice->getSpacing());
++	lattice_size_t x1 = (lattice_size_t) max(0.0,floor(boundingBox.min.x/lattice->getSpacing()));
+ 	lattice_size_t x2 = ((lattice_size_t)floor(boundingBox.max.x/lattice->getSpacing()))+1;
+-	lattice_size_t y1 = (lattice_size_t)floor(boundingBox.min.y/lattice->getSpacing());
++	lattice_size_t y1 = (lattice_size_t) max(0.0,floor(boundingBox.min.y/lattice->getSpacing()));
+ 	lattice_size_t y2 = ((lattice_size_t)floor(boundingBox.max.y/lattice->getSpacing()))+1;
+-	lattice_size_t z1 = (lattice_size_t)floor(boundingBox.min.z/lattice->getSpacing());
++	lattice_size_t z1 = (lattice_size_t) max(0.0,floor(boundingBox.min.z/lattice->getSpacing()));
+ 	lattice_size_t z2 = ((lattice_size_t)floor(boundingBox.max.z/lattice->getSpacing()))+1;
+     
+     // Constrain to the RDME domain
+diff --git a/src/c/lm/builder/Shape.h b/src/c/lm/builder/Shape.h
+index aef73d0..6b2bef9 100644
+--- a/src/c/lm/builder/Shape.h
++++ b/src/c/lm/builder/Shape.h
+@@ -319,7 +319,8 @@ public:
+        INTERSECTION     =  9,
+        MESH             = 10,
+        TORUS            = 11,
+-       ELLIPSE          = 12
++       ELLIPSE          = 12,
++       CONE             = 13
+     };
+ 
+ public:
+diff --git a/src/python/Examples/example-shapes.py b/src/python/Examples/example-shapes.py
+index 83a85a1..38855d7 100755
+--- a/src/python/Examples/example-shapes.py
++++ b/src/python/Examples/example-shapes.py
+@@ -23,68 +23,95 @@ sim.defineSpecies(species)
+ sim.addRegion('cytoplasm')
+ sim.addRegion('membrane')
+ 
++##################
++# Set Operations #
++##################
+ # Test the Intersection Operation
+ #  Here we define two sphere shaed objects and then define an an object based on
+ #  the intersection of the two spheres.  Spheres require a center point to be defined,
+ #  a radius, and the number of the region.  The number of the region can be extracted
+ #  from the simulation by passing the region name to the "siteTypes" dictionary
+-s1 = lm.Sphere(lm.point(*micron(0.512, 0.512, 1.024)), micron(0.3), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-s2 = lm.Sphere(lm.point(*micron(0.512, 0.512, 1.224)), micron(0.3), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-intersection = lm.Intersection(s1,s2, sim.siteTypes['cytoplasm'])
++sphere1 = lm.Sphere(lm.point(*micron(0.512, 0.512, 1.024)), micron(0.3), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++sphere2 = lm.Sphere(lm.point(*micron(0.512, 0.512, 1.224)), micron(0.3), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++intersection1 = lm.Intersection(sphere1,sphere2, sim.siteTypes['cytoplasm'])
+ 
+ # Test the Union Operation
+ #  Here we define a union between the previous intersection and a new sphere
+-s3 = lm.Sphere(lm.point(*micron(0.512, 0.7, 1.124)), micron(0.3), sim.siteTypes['cytoplasm'])
+-uni = lm.Union(intersection,s3,sim.siteTypes['cytoplasm'])
++sphere3 = lm.Sphere(lm.point(*micron(0.512, 0.7, 1.124)), micron(0.3), sim.siteTypes['cytoplasm'])
++union1 = lm.Union(intersection1,sphere3,sim.siteTypes['cytoplasm'])
+ # Once a shape is defined, it must be added to the LM RDME simulation builder.
+ #  this is accomplished by calling "addRegion" on the "lm_builder" object that
+ #  is part of the RDMESimulation object
+-sim.lm_builder.addRegion(uni)
++sim.lm_builder.addRegion(union1)
+ 
+ # Test Difference Operation
+ #  A cube is defined (lower and upper corners, followed by the region number and the up vector).
+ #  Also a capsule is defined based on the points of origins of the spheres at each end of the capsule and
+ #  the radius of the capsule.
+-b1 = lm.Cuboid(lm.point(*micron(0.1, 0.1, 2.048)),  lm.point(*micron(0.9, 0.9, 3.0)),  sim.siteTypes['cytoplasm'])
+-c1 = lm.Capsule(lm.point(*micron(0.512, 0.512, 2.048)),  lm.point(*micron(0.512, 0.512, 3.0)), micron(0.256),  sim.siteTypes['cytoplasm'])
++box1     = lm.Cuboid(lm.point(*micron(0.1, 0.1, 2.048)),  lm.point(*micron(0.9, 0.9, 3.0)),  sim.siteTypes['cytoplasm'])
++capsule1 = lm.Capsule(lm.point(*micron(0.512, 0.512, 2.048)),  lm.point(*micron(0.512, 0.512, 3.0)), micron(0.256),  sim.siteTypes['cytoplasm'])
+ # This difference is an assymetric difference, meaning it is the box with the cylinder cut out of it (b1-c1)
+-difference = lm.Difference(b1,c1, sim.siteTypes['membrane'])
+-sim.lm_builder.addRegion(difference)
++difference1 = lm.Difference(box1,capsule1, sim.siteTypes['membrane'])
++sim.lm_builder.addRegion(difference1)
+ 
+-# Draw a small Ellipse
++# Test simple difference
++box2    = lm.Cuboid(lm.point(*micron(0.0,  0.0,  3.75)),  lm.point(*micron(0.25, 0.25, 4.0)),  sim.siteTypes['cytoplasm'])
++sphere4 = lm.Sphere(lm.point(*micron(0.25, 0.25, 4.0)), micron(0.125), sim.siteTypes['cytoplasm'])
++difference2 = lm.Difference(box2,sphere4, sim.siteTypes['cytoplasm'])
++sim.lm_builder.addRegion(difference2)
++
++#################
++# Simple Shapes #
++#################
++# Draw a small Ellipsoid
+ #  Create an ellipse object by defining the center, followed by the radii of the three axes.  The ellipse also
+ #  takes an up vector and a pointing vector
+-e1 = lm.Ellipse(lm.point(*micron(0.512, 0.512, 2.75)), micron(0.1), micron(0.05), micron(0.2), sim.siteTypes['membrane'], lm.vector(0.0,0.0,1.0), lm.vector(1.0,0.0,0.0))
+-sim.lm_builder.addRegion(e1)
++ellipsoid1 = lm.Ellipse(lm.point(*micron(0.512, 0.512, 2.75)), micron(0.1), micron(0.05), micron(0.2), sim.siteTypes['membrane'], lm.vector(0.0,0.0,1.0), lm.vector(1.0,0.0,0.0))
++sim.lm_builder.addRegion(ellipsoid1)
+ 
+ # Draw a Torus
+ #  Define a torus based on the center, the radius of the ring and the radius of the torus solid
+-t1 = lm.Torus(lm.point(*micron(0.512, 0.512, 3.5)), micron(0.3), micron(0.1), sim.siteTypes['membrane'],lm.vector(0.0,0.0,1.0))
+-sim.lm_builder.addRegion(t1)
+-
+-# Test simple difference
+-b2 = lm.Cuboid(lm.point(*micron(0.0,  0.0,  3.75)),  lm.point(*micron(0.25, 0.25, 4.0)),  sim.siteTypes['cytoplasm'])
+-s4 = lm.Sphere(lm.point(*micron(0.25, 0.25, 4.0)), micron(0.125), sim.siteTypes['cytoplasm'])
+-difference2 = lm.Difference(b2,s4, sim.siteTypes['cytoplasm'])
+-sim.lm_builder.addRegion(difference2)
++torus1 = lm.Torus(lm.point(*micron(0.512, 0.512, 3.5)), micron(0.3), micron(0.1), sim.siteTypes['membrane'],lm.vector(0.0,0.0,1.0))
++sim.lm_builder.addRegion(torus1)
+ 
+ # Draw a Cylinder
+-#c2 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.0)), lm.point(micron(0.512),micron(0.512),micron(6.0)), micron(0.5), sim.siteTypes['cytoplasm'] )
+-#sim.lm_builder.addRegion(c2)
++#cylinder1 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.0)), lm.point(micron(0.512),micron(0.512),micron(6.0)), micron(0.5), sim.siteTypes['cytoplasm'] )
++#sim.lm_builder.addRegion(cylinder1)
++
++# Draw a Cone
++cone1 = lm.Cone(lm.point(*micron(0.712,0.712,4.2)), micron(0.2), micron(0.5), sim.siteTypes['membrane'], lm.vector(0,0,1)) # z
++cone2 = lm.Cone(lm.point(*micron(0.712,0.212,4.2)), micron(0.2), micron(0.4), sim.siteTypes['membrane'], lm.vector(0,1,0)) # y
++cone3 = lm.Cone(lm.point(*micron(0.212,0.712,4.2)), micron(0.2), micron(0.3), sim.siteTypes['membrane'], lm.vector(1,0,0)) # x 
++cone4 = lm.Cone(lm.point(*micron(0.212,0.212,4.2)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(1,1,1)) # 1,1,1
++cone5 = lm.Cone(lm.point(*micron(0.212,0.212,4.2)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(-1,-1,-1)) # 1,1,1
++sim.lm_builder.addRegion(cone1)
++sim.lm_builder.addRegion(cone2)
++sim.lm_builder.addRegion(cone3)
++sim.lm_builder.addRegion(cone4)
++sim.lm_builder.addRegion(cone5)
+ 
+-# Check objects that breach boundaries
++# Draw a Pyramid
++
++# Draw a Prism
++
++
++
++
++########################################
++# Check objects that breach boundaries #
++########################################
+ # X- 
+-s5 = lm.Sphere(lm.point(*micron(0.0, 0.512, 4.096)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-sim.lm_builder.addRegion(s5)
++sphere5 = lm.Sphere(lm.point(*micron(0.0, 0.512, 4.096)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++sim.lm_builder.addRegion(sphere5)
+ # X+ 
+-s6 = lm.Sphere(lm.point(*micron(1.024, 0.512, 5.120)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-sim.lm_builder.addRegion(s6)
++sphere6 = lm.Sphere(lm.point(*micron(1.024, 0.512, 5.120)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++sim.lm_builder.addRegion(sphere6)
+ # X+/Y+
+-s7 = lm.Sphere(lm.point(*micron(1.024, 1.024, 6.144)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-sim.lm_builder.addRegion(s7)
++sphere7 = lm.Sphere(lm.point(*micron(1.024, 1.024, 6.144)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++sim.lm_builder.addRegion(sphere7)
+ # X+/Y+
+-s8 = lm.Sphere(lm.point(*micron(1.024, 1.024, 8.192)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
+-sim.lm_builder.addRegion(s8)
++sphere8 = lm.Sphere(lm.point(*micron(1.024, 1.024, 8.192)), micron(0.25), sim.siteTypes['cytoplasm']) # si_dist_t radius, site_t type)
++sim.lm_builder.addRegion(sphere8)
+ 
+ 
+ # Modify the cytoplasm to add diffusion rates and reactions
+@@ -101,13 +128,10 @@ sim.modifyRegion('membrane') \
+ # Set diffusive properties between regions
+ sim.setTransitionRate(species='A', via='cytoplasm', to='membrane', rate= 2.5e-12)
+ sim.setTransitionRate(species='B', via='cytoplasm', to='membrane', rate= 2.5e-12)
+-sim.setTransitionRate(species='C', via='cytoplasm', to='membrane', rate= 2.5e-12)
+ 
+ # Populate the model with particles
+ sim.addParticles(species='A', region='cytoplasm', count=100)
+-sim.addParticles(species='B', region='cytoplasm', count=100)
+-#sim.addParticles(species='C', region='membrane', count=100)
+-
++sim.addParticles(species='B', region='membrane', count=100)
+ 
+ # Set simulation Parameters
+ sim.setTimestep(microsecond(50))
+@@ -115,7 +139,6 @@ sim.setWriteInterval(ms(100))
+ sim.setLatticeWriteInterval(ms(100))
+ sim.setSimulationTime(ms(100))
+ 
++# Save simulation
+ sim.save(args.outputFile)
+ 
+-#sim.run(args.outputFile, method='lm::rdme::NextSubvolumeSolver', replicates=1)
+-
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 7b0ca3d2437663dd126c28431aae0a52af23ba9e Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Tue, 27 Dec 2016 12:38:22 -0600
+Subject: [PATCH 08/71] Fixed cylinder orientation.
+
+---
+ src/c/lm/builder/Cylinder.cpp         | 65 ++++++++++++++++++++---------------
+ src/python/Examples/example-shapes.py | 18 ++++++----
+ 2 files changed, 48 insertions(+), 35 deletions(-)
+
+diff --git a/src/c/lm/builder/Cylinder.cpp b/src/c/lm/builder/Cylinder.cpp
+index f2a917b..52a61ac 100644
+--- a/src/c/lm/builder/Cylinder.cpp
++++ b/src/c/lm/builder/Cylinder.cpp
+@@ -45,20 +45,35 @@
+ namespace lm {
+     namespace builder {
+         
+-        Cylinder::Cylinder(point p1, point p2, si_dist_t radius, site_t type)
+-        :Shape(CYLINDER,Cylinder::calcBoundingBox(p1,p2,radius), type, vector(p1,p2).unitize(), vector::findPerpendicularVector(vector(p1,p2)).unitize()),p1(p1),p2(p2),radius(radius),length(p1.distance(p2))
++        Cylinder::Cylinder(point _p1, point _p2, si_dist_t _radius, site_t _type)
++        :Shape(CYLINDER
++               ,Cylinder::calcBoundingBox(_p1,_p2,_radius)
++               ,_type
++               ,vector(_p1,_p2).unitize()
++               ,vector::findPerpendicularVector(vector(_p1,_p2)).unitize())
++        ,p1(_p1)
++        ,p2(_p2)
++        ,radius(_radius)
++        ,length(_p1.distance(_p2))
+         {
+         }
+         
+-        bounding_box Cylinder::calcBoundingBox(point p1, point p2, si_dist_t radius)
++        bounding_box Cylinder::calcBoundingBox(point _p1, point _p2, si_dist_t _radius)
+         {
+             bounding_box bbox;
+-            bbox.min.x = (p1.x<p2.x)?(p1.x):(p2.x);
+-            bbox.max.x = (p1.x>p2.x)?(p1.x):(p2.x);
+-            bbox.min.y = (p1.y<p2.y)?(p1.y):(p2.y);
+-            bbox.max.y = (p1.y>p2.y)?(p1.y):(p2.y);
+-            bbox.min.z = (p1.z<p2.z)?(p1.z):(p2.z);
+-            bbox.max.z = (p1.z>p2.z)?(p1.z):(p2.z);
++            double adj = max(_p1.distance(_p2), _radius);
++            bbox.min.x = (_p1.x<_p2.x)?(_p1.x):(_p2.x);
++            bbox.min.x -= adj;
++            bbox.max.x = (_p1.x>_p2.x)?(_p1.x):(_p2.x);
++            bbox.max.x += adj;
++            bbox.min.y = (_p1.y<_p2.y)?(_p1.y):(_p2.y);
++            bbox.min.y -= adj;
++            bbox.max.y = (_p1.y>_p2.y)?(_p1.y):(_p2.y);
++            bbox.max.y += adj;
++            bbox.min.z = (_p1.z<_p2.z)?(_p1.z):(_p2.z);
++            bbox.min.z -= adj;
++            bbox.max.z = (_p1.z>_p2.z)?(_p1.z):(_p2.z);
++            bbox.max.z += adj;
+             return bbox;
+         }
+         
+@@ -80,25 +95,19 @@ namespace lm {
+         
+         bool Cylinder::contains(point query)
+         {
+-            // Transform the point as if the capsule was oriented in the +z direction with p1 at 0,0,r and p2 at 0,0,l-r.
+-            
+-            // Assume for now that the capsule is oriented with its long axis along the z axis.
+-            
+-            // Translate the sphere in the x-y plane.
+-            query.x -= p1.x;
+-            query.y -= p1.y;
+-            query.z -= p1.z;
+-            
+-            // Check if point is inside
+-            si_dist_t radius2 = radius*radius;
+-            if (query.z < length && query.z > 0.0) // Cylinder region
+-            {
+-                if (query.x*query.x + query.y*query.y > radius2)
+-                    return false;
+-                else
+-                    return true;
+-            }
+-			return false;
++            // 1) Compute projection onto normal to get length
++            double proj = vector(p1, query).dot(at);
++            // 2) Check if "below" base or "above" apex
++            if(proj < 0.0 || proj > length)
++                return false;
++            // 3) Find scaled center (e.g. how far up the center spine)
++            vector h_prime = at.scale(proj);
++            vector c_prime = vector(p1.plus(h_prime.toPoint()));
++            // 4) compute distance to scaled center
++            if(c_prime.toPoint().distanceSquared(query) <= radius*radius)
++                return true;
++
++            return false;
+         }
+         
+         bool Cylinder::contains(Shape * query)
+diff --git a/src/python/Examples/example-shapes.py b/src/python/Examples/example-shapes.py
+index 38855d7..3b58a09 100755
+--- a/src/python/Examples/example-shapes.py
++++ b/src/python/Examples/example-shapes.py
+@@ -75,15 +75,19 @@ torus1 = lm.Torus(lm.point(*micron(0.512, 0.512, 3.5)), micron(0.3), micron(0.1)
+ sim.lm_builder.addRegion(torus1)
+ 
+ # Draw a Cylinder
+-#cylinder1 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.0)), lm.point(micron(0.512),micron(0.512),micron(6.0)), micron(0.5), sim.siteTypes['cytoplasm'] )
+-#sim.lm_builder.addRegion(cylinder1)
++cylinder1 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.0)), lm.point(micron(0.512),micron(0.512),micron(5.5)), micron(0.3), sim.siteTypes['cytoplasm'] )
++cylinder2 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.5)), lm.point(micron(0.512),micron(0.712),micron(6.0)), micron(0.3), sim.siteTypes['cytoplasm'] )
++cylinder3 = lm.Cylinder(lm.point(micron(0.712),micron(0.512),micron(6.5)), lm.point(micron(0.512),micron(0.512),micron(6.5)), micron(0.3), sim.siteTypes['membrane'] )
++sim.lm_builder.addRegion(cylinder1)
++sim.lm_builder.addRegion(cylinder2)
++sim.lm_builder.addRegion(cylinder3)
+ 
+ # Draw a Cone
+-cone1 = lm.Cone(lm.point(*micron(0.712,0.712,4.2)), micron(0.2), micron(0.5), sim.siteTypes['membrane'], lm.vector(0,0,1)) # z
+-cone2 = lm.Cone(lm.point(*micron(0.712,0.212,4.2)), micron(0.2), micron(0.4), sim.siteTypes['membrane'], lm.vector(0,1,0)) # y
+-cone3 = lm.Cone(lm.point(*micron(0.212,0.712,4.2)), micron(0.2), micron(0.3), sim.siteTypes['membrane'], lm.vector(1,0,0)) # x 
+-cone4 = lm.Cone(lm.point(*micron(0.212,0.212,4.2)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(1,1,1)) # 1,1,1
+-cone5 = lm.Cone(lm.point(*micron(0.212,0.212,4.2)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(-1,-1,-1)) # 1,1,1
++cone1 = lm.Cone(lm.point(*micron(0.712,0.712,4.4)), micron(0.2), micron(0.5), sim.siteTypes['membrane'], lm.vector(0,0,1)) # z
++cone2 = lm.Cone(lm.point(*micron(0.712,0.212,4.4)), micron(0.2), micron(0.4), sim.siteTypes['membrane'], lm.vector(0,1,0)) # y
++cone3 = lm.Cone(lm.point(*micron(0.212,0.712,4.4)), micron(0.2), micron(0.3), sim.siteTypes['membrane'], lm.vector(1,0,0)) # x 
++cone4 = lm.Cone(lm.point(*micron(0.212,0.212,4.4)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(1,1,1)) # 1,1,1
++cone5 = lm.Cone(lm.point(*micron(0.212,0.212,4.4)), micron(0.2), micron(0.2), sim.siteTypes['membrane'], lm.vector(-1,-1,-1)) # 1,1,1
+ sim.lm_builder.addRegion(cone1)
+ sim.lm_builder.addRegion(cone2)
+ sim.lm_builder.addRegion(cone3)
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 19816b4d56a921699fd9bc0ee6223d5044b60841 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Tue, 27 Dec 2016 13:09:44 -0600
+Subject: [PATCH 09/71] Fixed orientation of capsules and capsule shells.
+
+---
+ src/c/lm/builder/Capsule.cpp          |  58 ++++----
+ src/c/lm/builder/CapsuleShell.cpp     | 257 +++++++++++++++++++---------------
+ src/c/lm/builder/CapsuleShell.h       |   2 +-
+ src/python/Examples/example-shapes.py |  18 ++-
+ 4 files changed, 192 insertions(+), 143 deletions(-)
+
+diff --git a/src/c/lm/builder/Capsule.cpp b/src/c/lm/builder/Capsule.cpp
+index 311a612..ff4b600 100644
+--- a/src/c/lm/builder/Capsule.cpp
++++ b/src/c/lm/builder/Capsule.cpp
+@@ -46,20 +46,29 @@ namespace lm {
+ namespace builder {
+ 
+ 
+-Capsule::Capsule(point p1, point p2, si_dist_t radius, site_t type)
+-:Shape(CAPSULE,Capsule::calcBoundingBox(p1,p2,radius), type,  vector(p1,p2).unitize(), vector::findPerpendicularVector(vector(p1,p2)).unitize()),p1(p1),p2(p2),radius(radius),length(p1.distance(p2)+radius+radius)
++Capsule::Capsule(point _p1, point _p2, si_dist_t _radius, site_t _type)
++:Shape(CAPSULE
++      ,Capsule::calcBoundingBox(_p1,_p2,_radius)
++      ,_type
++      ,vector(_p1,_p2).unitize()
++      ,vector::findPerpendicularVector(vector(_p1,_p2)).unitize())
++,p1(_p1)
++,p2(_p2)
++,radius(_radius)
++,length(_p1.distance(_p2)+_radius+_radius)
+ {
+ }
+ 
+ bounding_box Capsule::calcBoundingBox(point p1, point p2, si_dist_t radius)
+ {
+ 	bounding_box bbox;
+-	bbox.min.x = (p1.x<p2.x)?(p1.x-radius):(p2.x-radius);
+-	bbox.max.x = (p1.x>p2.x)?(p1.x+radius):(p2.x+radius);
+-	bbox.min.y = (p1.y<p2.y)?(p1.y-radius):(p2.y-radius);
+-	bbox.max.y = (p1.y>p2.y)?(p1.y+radius):(p2.y+radius);
+-	bbox.min.z = (p1.z<p2.z)?(p1.z-radius):(p2.z-radius);
+-	bbox.max.z = (p1.z>p2.z)?(p1.z+radius):(p2.z+radius);
++    double adj = max(radius, p1.distance(p2)+2.0*radius);
++	bbox.min.x = (p1.x<p2.x)?(p1.x-adj):(p2.x-adj);
++	bbox.max.x = (p1.x>p2.x)?(p1.x+adj):(p2.x+adj);
++	bbox.min.y = (p1.y<p2.y)?(p1.y-adj):(p2.y-adj);
++	bbox.max.y = (p1.y>p2.y)?(p1.y+adj):(p2.y+adj);
++	bbox.min.z = (p1.z<p2.z)?(p1.z-adj):(p2.z-adj);
++	bbox.max.z = (p1.z>p2.z)?(p1.z+adj):(p2.z+adj);
+ 	return bbox;
+ }
+ 
+@@ -81,33 +90,32 @@ bool Capsule::intersects(Shape * query)
+ 
+ bool Capsule::contains(point query)
+ {
+-    // Transform the point as if the capsule was oriented in the +z direction with p1 at 0,0,r and p2 at 0,0,l-r.
+-
+-    // Assume for now that the capsule is oriented with its long axis along the z axis.
+-
+-    // Translate the sphere in the x-y plane.
+-	query.x -= p1.x;
+-	query.y -= p1.y;
+-	query.z -= (p1.z-radius);
+-
+     // Check if point is inside
+     si_dist_t radius2 = radius*radius;
+-    if (query.z < radius) // Lower cap region
++    if (query.distanceSquared(p1) <= radius2) // Lower cap region
+     {
+-        if (query.x*query.x + query.y*query.y + (query.z-(radius))*(query.z-(radius)) > radius2) return false;
+         return true;
+     }
+-    else if (query.z > length-radius) // Cylinder region
++    else if (query.distanceSquared(p2) <= radius2) // Upper cap region
+     {
+-        if (query.x*query.x + query.y*query.y + (query.z-(length-radius))*(query.z-(length-radius)) > radius2) return false;
+         return true;
+     }
+-    else // Upper cap region
++    else // Cylinder region
+     {
+-        // Make sure the sphere does not fall outside the cylinder.
+-        if (query.x*query.x + query.y*query.y > radius2) return false;
+-        return true;
++        // 1) Compute projection onto normal to get length
++        double proj = vector(p1, query).dot(at);
++        // 2) Check if "below" base or "above" apex
++        if(proj < 0.0 || proj > p1.distance(p2))
++            return false;
++        // 3) Find scaled center (e.g. how far up the center spine)
++        vector h_prime = at.scale(proj);
++        vector c_prime = vector(p1.plus(h_prime.toPoint()));
++        // 4) compute distance to scaled center
++        if(c_prime.toPoint().distanceSquared(query) <= radius2)
++            return true;
+     }
++
++    return false;
+ }
+ 
+ bool Capsule::contains(Shape * query)
+diff --git a/src/c/lm/builder/CapsuleShell.cpp b/src/c/lm/builder/CapsuleShell.cpp
+index ec10517..2c8c689 100644
+--- a/src/c/lm/builder/CapsuleShell.cpp
++++ b/src/c/lm/builder/CapsuleShell.cpp
+@@ -46,20 +46,30 @@
+ namespace lm {
+ namespace builder {
+ 
+-CapsuleShell::CapsuleShell(point p1, point p2, si_dist_t innerRadius, si_dist_t outerRadius, site_t type)
+-:Shape(CAPSULE_SHELL,CapsuleShell::calcBoundingBox(p1,p2,outerRadius), type, vector(p1,p2).unitize(), vector::findPerpendicularVector(vector(p1,p2)).unitize()),p1(p1),p2(p2),innerRadius(innerRadius),outerRadius(outerRadius),length(p1.distance(p2)+outerRadius+outerRadius)
++CapsuleShell::CapsuleShell(point _p1, point _p2, si_dist_t _innerRadius, si_dist_t _outerRadius, site_t _type)
++:Shape(CAPSULE_SHELL
++      ,CapsuleShell::calcBoundingBox(_p1,_p2,_outerRadius)
++      ,_type
++      ,vector(_p1,_p2).unitize()
++     ,vector::findPerpendicularVector(vector(_p1,_p2)).unitize())
++,p1(_p1)
++,p2(_p2)
++,innerRadius(_innerRadius)
++,outerRadius(_outerRadius)
++,length(_p1.distance(_p2)+_outerRadius+_outerRadius)
+ {
+ }
+ 
+ bounding_box CapsuleShell::calcBoundingBox(point p1, point p2, si_dist_t radius)
+ {
+ 	bounding_box bbox;
+-	bbox.min.x = (p1.x<p2.x)?(p1.x-radius):(p2.x-radius);
+-	bbox.max.x = (p1.x>p2.x)?(p1.x+radius):(p2.x+radius);
+-	bbox.min.y = (p1.y<p2.y)?(p1.y-radius):(p2.y-radius);
+-	bbox.max.y = (p1.y>p2.y)?(p1.y+radius):(p2.y+radius);
+-	bbox.min.z = (p1.z<p2.z)?(p1.z-radius):(p2.z-radius);
+-	bbox.max.z = (p1.z>p2.z)?(p1.z+radius):(p2.z+radius);
++    double adj = max(radius, p1.distance(p2)+2.0*radius);
++	bbox.min.x = (p1.x<p2.x)?(p1.x-adj):(p2.x-adj);
++	bbox.max.x = (p1.x>p2.x)?(p1.x+adj):(p2.x+adj);
++	bbox.min.y = (p1.y<p2.y)?(p1.y-adj):(p2.y-adj);
++	bbox.max.y = (p1.y>p2.y)?(p1.y+adj):(p2.y+adj);
++	bbox.min.z = (p1.z<p2.z)?(p1.z-adj):(p2.z-adj);
++	bbox.max.z = (p1.z>p2.z)?(p1.z+adj):(p2.z+adj);
+ 	return bbox;
+ }
+ 
+@@ -81,8 +91,25 @@ bool CapsuleShell::intersects(Shape * query)
+ 
+ bool CapsuleShell::contains(point query)
+ {
+-	Sphere test(query, 0.0, 0);
+-	return contains(&test);
++    // Check if point is inside
++    si_dist_t oradius2 = outerRadius*outerRadius;
++    si_dist_t iradius2 = innerRadius*innerRadius;
++    // 1) Compute projection onto normal to get length
++    double proj = vector(p1, query).dot(at);
++    // 2) Check if "below" base or "above" apex
++    if(proj < 0.0 || proj > p1.distance(p2)) {
++        if (query.distanceSquared(p1) <= oradius2 && query.distanceSquared(p1) >= iradius2) return true;
++        if (query.distanceSquared(p2) <= oradius2 && query.distanceSquared(p2) >= iradius2) return true;
++        return false;
++    }
++    // 3) Find scaled center (e.g. how far up the center spine)
++    vector h_prime = at.scale(proj);
++    vector c_prime = vector(p1.plus(h_prime.toPoint()));
++    // 4) compute distance to scaled center
++    if(c_prime.toPoint().distanceSquared(query) <= oradius2 && c_prime.toPoint().distanceSquared(query) >= iradius2)
++        return true;
++
++    return false;
+ }
+ 
+ bool CapsuleShell::contains(Shape * query)
+@@ -136,111 +163,111 @@ double CapsuleShell::getVolume()
+     return vouter-vinner;
+ }
+ 
+-void CapsuleShell::discretizeTo(lm::rdme::Lattice * lattice)
+-{
+-	// Assume that the capsule is oriented in the +z direction.
+-
+-	// Get the starting and ending z planes.
+-	lattice_size_t z1 = (lattice_size_t)floor((p1.z-outerRadius+lattice->getSpacing()/2)/lattice->getSpacing());
+-	lattice_size_t z2 = ((lattice_size_t)floor((p2.z+outerRadius-lattice->getSpacing()/2)/lattice->getSpacing()))+1;
+-
+-	// The first z plane is a solid circle.
+-	{
+-		lattice_size_t z = z1;
+-
+-		// Get the distance to p1.
+-		si_dist_t b = p1.z-(((double)z)+0.5)*lattice->getSpacing();
+-
+-		// Get the radius of the circle in this plane.
+-		si_dist_t pr = sqrt(outerRadius*outerRadius-b*b);
+-
+-		// Get the bounds of the circle in this plane.
+-		lattice_size_t x1 = (lattice_size_t)floor((p1.x-pr)/lattice->getSpacing());
+-		lattice_size_t x2 = ((lattice_size_t)floor((p1.x+pr)/lattice->getSpacing()))+1;
+-		lattice_size_t y1 = (lattice_size_t)floor((p1.y-pr)/lattice->getSpacing());
+-		lattice_size_t y2 = ((lattice_size_t)floor((p1.y+pr)/lattice->getSpacing()))+1;
+-
+-		// Fill in the circle.
+-		for (lattice_size_t x = x1; x<=x2; x++)
+-			for (lattice_size_t y = y1; y<=y2; y++)
+-			{
+-				point c((((double)x)+0.5)*lattice->getSpacing()-p1.x, (((double)y)+0.5)*lattice->getSpacing()-p1.y, 0.0);
+-				if (c.x*c.x+c.y*c.y < pr*pr) lattice->setSiteType(x, y, z, type);
+-			}
+-	}
+-
+-	// Go through all of the intermediate z planes and fill them with rings.
+-	for (lattice_size_t z=z1+1; z<z2-1; z++)
+-	{
+-		// See which area of the capsule we are in.
+-		si_dist_t subvolumeZ = (((double)z)+0.5)*lattice->getSpacing();
+-		si_dist_t pr1=0.0, pr2=0.0;
+-		if (subvolumeZ <= p1.z)
+-		{
+-			si_dist_t b = p1.z-subvolumeZ;
+-			pr1 = sqrt(outerRadius*outerRadius-b*b);
+-			if (b<innerRadius)
+-				pr2 = sqrt(innerRadius*innerRadius-b*b);
+-			else
+-				pr2 = 0.0;
+-		}
+-		else if (subvolumeZ > p2.z)
+-		{
+-			si_dist_t b = subvolumeZ-p2.z;
+-			pr1 = sqrt(outerRadius*outerRadius-b*b);
+-			if (b<innerRadius)
+-				pr2 = sqrt(innerRadius*innerRadius-b*b);
+-			else
+-				pr2 = 0.0;
+-		}
+-		else
+-		{
+-			pr1 = outerRadius;
+-			pr2 = innerRadius;
+-		}
+-
+-		// Get the bounds of the circle in this plane.
+-		lattice_size_t x1 = (lattice_size_t)floor((p1.x-pr1)/lattice->getSpacing());
+-		lattice_size_t x2 = ((lattice_size_t)floor((p1.x+pr1)/lattice->getSpacing()))+1;
+-		lattice_size_t y1 = (lattice_size_t)floor((p1.y-pr1)/lattice->getSpacing());
+-		lattice_size_t y2 = ((lattice_size_t)floor((p1.y+pr1)/lattice->getSpacing()))+1;
+-
+-		// Fill in the ring.
+-		for (lattice_size_t x = x1; x<=x2; x++)
+-			for (lattice_size_t y = y1; y<=y2; y++)
+-			{
+-				point c((((double)x)+0.5)*lattice->getSpacing()-p1.x, (((double)y)+0.5)*lattice->getSpacing()-p1.y, 0.0);
+-				if (c.x*c.x+c.y*c.y <= pr1*pr1 && c.x*c.x+c.y*c.y >= pr2*pr2) lattice->setSiteType(x, y, z, type);
+-			}
+-
+-		// Make sure the ring is fully connected in x and y.
+-	}
+-
+-	// The final z plane is also a solid circle.
+-	{
+-		lattice_size_t z = z2;
+-
+-		// Get the distance to p1.
+-		si_dist_t b = ((((double)z)+0.5)*lattice->getSpacing())-p2.z;
+-
+-		// Get the radius of the circle in this plane.
+-		si_dist_t pr = sqrt(outerRadius*outerRadius-b*b);
+-
+-		// Get the bounds of the circle in this plane.
+-		lattice_size_t x1 = (lattice_size_t)floor((p2.x-pr)/lattice->getSpacing());
+-		lattice_size_t x2 = ((lattice_size_t)floor((p2.x+pr)/lattice->getSpacing()))+1;
+-		lattice_size_t y1 = (lattice_size_t)floor((p2.y-pr)/lattice->getSpacing());
+-		lattice_size_t y2 = ((lattice_size_t)floor((p2.y+pr)/lattice->getSpacing()))+1;
+-
+-		// Fill in the circle.
+-		for (lattice_size_t x = x1; x<=x2; x++)
+-			for (lattice_size_t y = y1; y<=y2; y++)
+-			{
+-				point c((((double)x)+0.5)*lattice->getSpacing()-p2.x, (((double)y)+0.5)*lattice->getSpacing()-p2.y, 0.0);
+-				if (c.x*c.x+c.y*c.y < pr*pr) lattice->setSiteType(x, y, z, type);
+-			}
+-	}
+-}
++//void CapsuleShell::discretizeTo(lm::rdme::Lattice * lattice)
++//{
++//	// Assume that the capsule is oriented in the +z direction.
++//
++//	// Get the starting and ending z planes.
++//	lattice_size_t z1 = (lattice_size_t)floor((p1.z-outerRadius+lattice->getSpacing()/2)/lattice->getSpacing());
++//	lattice_size_t z2 = ((lattice_size_t)floor((p2.z+outerRadius-lattice->getSpacing()/2)/lattice->getSpacing()))+1;
++//
++//	// The first z plane is a solid circle.
++//	{
++//		lattice_size_t z = z1;
++//
++//		// Get the distance to p1.
++//		si_dist_t b = p1.z-(((double)z)+0.5)*lattice->getSpacing();
++//
++//		// Get the radius of the circle in this plane.
++//		si_dist_t pr = sqrt(outerRadius*outerRadius-b*b);
++//
++//		// Get the bounds of the circle in this plane.
++//		lattice_size_t x1 = (lattice_size_t)floor((p1.x-pr)/lattice->getSpacing());
++//		lattice_size_t x2 = ((lattice_size_t)floor((p1.x+pr)/lattice->getSpacing()))+1;
++//		lattice_size_t y1 = (lattice_size_t)floor((p1.y-pr)/lattice->getSpacing());
++//		lattice_size_t y2 = ((lattice_size_t)floor((p1.y+pr)/lattice->getSpacing()))+1;
++//
++//		// Fill in the circle.
++//		for (lattice_size_t x = x1; x<=x2; x++)
++//			for (lattice_size_t y = y1; y<=y2; y++)
++//			{
++//				point c((((double)x)+0.5)*lattice->getSpacing()-p1.x, (((double)y)+0.5)*lattice->getSpacing()-p1.y, 0.0);
++//				if (c.x*c.x+c.y*c.y < pr*pr) lattice->setSiteType(x, y, z, type);
++//			}
++//	}
++//
++//	// Go through all of the intermediate z planes and fill them with rings.
++//	for (lattice_size_t z=z1+1; z<z2-1; z++)
++//	{
++//		// See which area of the capsule we are in.
++//		si_dist_t subvolumeZ = (((double)z)+0.5)*lattice->getSpacing();
++//		si_dist_t pr1=0.0, pr2=0.0;
++//		if (subvolumeZ <= p1.z)
++//		{
++//			si_dist_t b = p1.z-subvolumeZ;
++//			pr1 = sqrt(outerRadius*outerRadius-b*b);
++//			if (b<innerRadius)
++//				pr2 = sqrt(innerRadius*innerRadius-b*b);
++//			else
++//				pr2 = 0.0;
++//		}
++//		else if (subvolumeZ > p2.z)
++//		{
++//			si_dist_t b = subvolumeZ-p2.z;
++//			pr1 = sqrt(outerRadius*outerRadius-b*b);
++//			if (b<innerRadius)
++//				pr2 = sqrt(innerRadius*innerRadius-b*b);
++//			else
++//				pr2 = 0.0;
++//		}
++//		else
++//		{
++//			pr1 = outerRadius;
++//			pr2 = innerRadius;
++//		}
++//
++//		// Get the bounds of the circle in this plane.
++//		lattice_size_t x1 = (lattice_size_t)floor((p1.x-pr1)/lattice->getSpacing());
++//		lattice_size_t x2 = ((lattice_size_t)floor((p1.x+pr1)/lattice->getSpacing()))+1;
++//		lattice_size_t y1 = (lattice_size_t)floor((p1.y-pr1)/lattice->getSpacing());
++//		lattice_size_t y2 = ((lattice_size_t)floor((p1.y+pr1)/lattice->getSpacing()))+1;
++//
++//		// Fill in the ring.
++//		for (lattice_size_t x = x1; x<=x2; x++)
++//			for (lattice_size_t y = y1; y<=y2; y++)
++//			{
++//				point c((((double)x)+0.5)*lattice->getSpacing()-p1.x, (((double)y)+0.5)*lattice->getSpacing()-p1.y, 0.0);
++//				if (c.x*c.x+c.y*c.y <= pr1*pr1 && c.x*c.x+c.y*c.y >= pr2*pr2) lattice->setSiteType(x, y, z, type);
++//			}
++//
++//		// Make sure the ring is fully connected in x and y.
++//	}
++//
++//	// The final z plane is also a solid circle.
++//	{
++//		lattice_size_t z = z2;
++//
++//		// Get the distance to p1.
++//		si_dist_t b = ((((double)z)+0.5)*lattice->getSpacing())-p2.z;
++//
++//		// Get the radius of the circle in this plane.
++//		si_dist_t pr = sqrt(outerRadius*outerRadius-b*b);
++//
++//		// Get the bounds of the circle in this plane.
++//		lattice_size_t x1 = (lattice_size_t)floor((p2.x-pr)/lattice->getSpacing());
++//		lattice_size_t x2 = ((lattice_size_t)floor((p2.x+pr)/lattice->getSpacing()))+1;
++//		lattice_size_t y1 = (lattice_size_t)floor((p2.y-pr)/lattice->getSpacing());
++//		lattice_size_t y2 = ((lattice_size_t)floor((p2.y+pr)/lattice->getSpacing()))+1;
++//
++//		// Fill in the circle.
++//		for (lattice_size_t x = x1; x<=x2; x++)
++//			for (lattice_size_t y = y1; y<=y2; y++)
++//			{
++//				point c((((double)x)+0.5)*lattice->getSpacing()-p2.x, (((double)y)+0.5)*lattice->getSpacing()-p2.y, 0.0);
++//				if (c.x*c.x+c.y*c.y < pr*pr) lattice->setSiteType(x, y, z, type);
++//			}
++//	}
++//}
+ 
+ }
+ }
+diff --git a/src/c/lm/builder/CapsuleShell.h b/src/c/lm/builder/CapsuleShell.h
+index caaf207..6554c31 100644
+--- a/src/c/lm/builder/CapsuleShell.h
++++ b/src/c/lm/builder/CapsuleShell.h
+@@ -86,7 +86,7 @@ public:
+ 
+     /// @brief Discretize the object to the specified lattice
+     /// @param lattice Lattice in which to discretize the shape
+-    virtual void discretizeTo(lm::rdme::Lattice * lattice);
++    //virtual void discretizeTo(lm::rdme::Lattice * lattice);
+ 
+ private:
+     static bounding_box calcBoundingBox(point p1, point p2, si_dist_t outerRadius);
+diff --git a/src/python/Examples/example-shapes.py b/src/python/Examples/example-shapes.py
+index 3b58a09..a31b8ca 100755
+--- a/src/python/Examples/example-shapes.py
++++ b/src/python/Examples/example-shapes.py
+@@ -74,7 +74,7 @@ sim.lm_builder.addRegion(ellipsoid1)
+ torus1 = lm.Torus(lm.point(*micron(0.512, 0.512, 3.5)), micron(0.3), micron(0.1), sim.siteTypes['membrane'],lm.vector(0.0,0.0,1.0))
+ sim.lm_builder.addRegion(torus1)
+ 
+-# Draw a Cylinder
++# Draw some Cylinders
+ cylinder1 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.0)), lm.point(micron(0.512),micron(0.512),micron(5.5)), micron(0.3), sim.siteTypes['cytoplasm'] )
+ cylinder2 = lm.Cylinder(lm.point(micron(0.512),micron(0.512),micron(5.5)), lm.point(micron(0.512),micron(0.712),micron(6.0)), micron(0.3), sim.siteTypes['cytoplasm'] )
+ cylinder3 = lm.Cylinder(lm.point(micron(0.712),micron(0.512),micron(6.5)), lm.point(micron(0.512),micron(0.512),micron(6.5)), micron(0.3), sim.siteTypes['membrane'] )
+@@ -82,7 +82,7 @@ sim.lm_builder.addRegion(cylinder1)
+ sim.lm_builder.addRegion(cylinder2)
+ sim.lm_builder.addRegion(cylinder3)
+ 
+-# Draw a Cone
++# Draw some Cones
+ cone1 = lm.Cone(lm.point(*micron(0.712,0.712,4.4)), micron(0.2), micron(0.5), sim.siteTypes['membrane'], lm.vector(0,0,1)) # z
+ cone2 = lm.Cone(lm.point(*micron(0.712,0.212,4.4)), micron(0.2), micron(0.4), sim.siteTypes['membrane'], lm.vector(0,1,0)) # y
+ cone3 = lm.Cone(lm.point(*micron(0.212,0.712,4.4)), micron(0.2), micron(0.3), sim.siteTypes['membrane'], lm.vector(1,0,0)) # x 
+@@ -94,6 +94,20 @@ sim.lm_builder.addRegion(cone3)
+ sim.lm_builder.addRegion(cone4)
+ sim.lm_builder.addRegion(cone5)
+ 
++# Draw some Capsules
++capsule1 = lm.Capsule(lm.point(micron(0.212),micron(0.212),micron(6.0)), lm.point(micron(0.212),micron(0.212),micron(6.5)), micron(0.1), sim.siteTypes['cytoplasm'] )
++capsule2 = lm.Capsule(lm.point(micron(0.512),micron(0.512),micron(6.5)), lm.point(micron(0.212),micron(0.712),micron(7.0)), micron(0.2), sim.siteTypes['cytoplasm'] )
++capsule3 = lm.Capsule(lm.point(micron(0.712),micron(0.512),micron(7.5)), lm.point(micron(0.512),micron(0.512),micron(7.5)), micron(0.1), sim.siteTypes['membrane'] )
++sim.lm_builder.addRegion(capsule1)
++sim.lm_builder.addRegion(capsule2)
++sim.lm_builder.addRegion(capsule3)
++
++# Draw some Capsule Shells
++capsuleShell1 = lm.CapsuleShell(lm.point(micron(0.212),micron(0.212),micron(7.25)), lm.point(micron(0.212),micron(0.712),micron(7.25)), micron(0.1), micron(0.2), sim.siteTypes['membrane'] )
++#capsuleShell2 = lm.Capsule(lm.point(micron(0.512),micron(0.512),micron()), lm.point(micron(0.212),micron(0.712),micron(7.0)), micron(0.4), micron(0.1), sim.siteTypes['cytoplasm'] )
++sim.lm_builder.addRegion(capsuleShell1)
++#sim.lm_builder.addRegion(capsuleShell2)
++
+ # Draw a Pyramid
+ 
+ # Draw a Prism
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 74b0c69afd7c9534ffbe6722e93f7af534a201df Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Thu, 29 Dec 2016 11:06:40 -0600
+Subject: [PATCH 10/71] pySTDLM functions to get species names from HDF5.
+
+---
+ src/python/pySTDLM/PostProcessing.py | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/src/python/pySTDLM/PostProcessing.py b/src/python/pySTDLM/PostProcessing.py
+index f359f7f..e4cfb09 100644
+--- a/src/python/pySTDLM/PostProcessing.py
++++ b/src/python/pySTDLM/PostProcessing.py
+@@ -442,6 +442,25 @@ def plotPhaseSpace(f, species=None, replicate=1, withHistogram=False):
+ # ##############################################################
+ # Functions to extract particular features from the simulation #
+ # ##############################################################
++
++## Exract the species names
++# @param f The HDF5 file handle to extract from or the name of a file to open
++def getSpecies(f):
++    # Open file if a string is passed
++    wasString = False
++    if isinstance(f, str):
++        f = openLMFile(f)
++        wasString = True
++    
++    # Get a handle a copy of the species names
++    species = f['Parameters'].attrs['speciesNames'].decode('utf8').split(",")
++    
++    # close file if need be
++    if wasString:
++        closeLMFile(f)
++    
++    return species
++
+ ## Extract the timestep times
+ # @param f The HDF5 file handle to extract from or the name of a file to open
+ # @return The timestep times in a numpy array
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 867c2ee21edb09f6a94994b3ecf23d65a61fa6c7 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Wed, 18 Jan 2017 14:49:02 -0600
+Subject: [PATCH 12/71] Added a unionset object.
+
+---
+ src/c/lm/builder/LatticeBuilder.cpp |  16 +++++
+ src/c/lm/builder/Shape.h            |   3 +-
+ src/c/lm/builder/UnionSet.cpp       | 115 ++++++++++++++++++++++++++++++++++++
+ src/c/lm/builder/UnionSet.h         |  90 ++++++++++++++++++++++++++++
+ src/c/subdir.mk                     |   2 +
+ src/swig/lm.i                       |  11 ++++
+ 6 files changed, 236 insertions(+), 1 deletion(-)
+ create mode 100644 src/c/lm/builder/UnionSet.cpp
+ create mode 100644 src/c/lm/builder/UnionSet.h
+
+diff --git a/src/c/lm/builder/LatticeBuilder.cpp b/src/c/lm/builder/LatticeBuilder.cpp
+index cd9ab83..1bcf176 100644
+--- a/src/c/lm/builder/LatticeBuilder.cpp
++++ b/src/c/lm/builder/LatticeBuilder.cpp
+@@ -53,6 +53,7 @@
+ #include "lm/builder/Sphere.h"
+ #include "lm/builder/Difference.h"
+ #include "lm/builder/Union.h"
++#include "lm/builder/UnionSet.h"
+ #include "lm/builder/Intersection.h"
+ #include "lm/builder/Torus.h"
+ #include "lm/builder/Ellipse.h"
+@@ -421,6 +422,21 @@ void LatticeBuilder::getSpatialModel(SpatialModel * spatialModel)
+ 				spatialModel->mutable_region(i)->set_shape(uni->getShapeType());
+ 				spatialModel->mutable_region(i)->set_site_type(uni->getType());
+                 // TODO: add union shape parameters
++                /*
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP1().x);
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP1().y);
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP1().z);
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP2().x);
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP2().y);
++				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP2().z);
++                 */
++			}
++			else if (shape->getShapeType() == Shape::UNIONSET)
++			{
++				UnionSet * uni = (UnionSet *)shape;
++				spatialModel->mutable_region(i)->set_shape(uni->getShapeType());
++				spatialModel->mutable_region(i)->set_site_type(uni->getType());
++                // TODO: add union shape parameters
+                 /*
+ 				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP1().x);
+ 				spatialModel->mutable_region(i)->add_shape_parameter(cuboid->getP1().y);
+diff --git a/src/c/lm/builder/Shape.h b/src/c/lm/builder/Shape.h
+index 6b2bef9..2e6d8f1 100644
+--- a/src/c/lm/builder/Shape.h
++++ b/src/c/lm/builder/Shape.h
+@@ -320,7 +320,8 @@ public:
+        MESH             = 10,
+        TORUS            = 11,
+        ELLIPSE          = 12,
+-       CONE             = 13
++       CONE             = 13,
++       UNIONSET         = 14
+     };
+ 
+ public:
+diff --git a/src/c/lm/builder/UnionSet.cpp b/src/c/lm/builder/UnionSet.cpp
+new file mode 100644
+index 0000000..fce08f8
+--- /dev/null
++++ b/src/c/lm/builder/UnionSet.cpp
+@@ -0,0 +1,115 @@
++/*
++ * University of Illinois Open Source License
++ * Copyright 2014-2015 Luthey-Schulten Group,
++ * All rights reserved.
++ *
++ * Developed by: Luthey-Schulten Group
++ *               University of Illinois at Urbana-Champaign
++ *               http://www.scs.uiuc.edu/~schulten
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy of
++ * this software and associated documentation files (the Software), to deal with
++ * the Software without restriction, including without limitation the rights to
++ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
++ * of the Software, and to permit persons to whom the Software is furnished to
++ * do so, subject to the following conditions:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimers.
++ *
++ * - Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * - Neither the names of the Luthey-Schulten Group, University of Illinois at
++ * Urbana-Champaign, nor the names of its contributors may be used to endorse or
++ * promote products derived from this Software without specific prior written
++ * permission.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
++ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ * OTHER DEALINGS WITH THE SOFTWARE.
++ *
++ * Author(s): Joseph R. Peterson
++ */
++
++#include <vector>
++
++#include "lm/builder/Shape.h"
++#include "lm/builder/UnionSet.h"
++#include "lm/rdme/Lattice.h"
++
++namespace lm {
++    namespace builder {
++        
++        UnionSet::UnionSet(site_t type)
++        :Shape(UNIONSET,
++               bounding_box(),
++               type)
++        {
++        }
++        
++        UnionSet::~UnionSet()
++        {
++        }
++        
++        void UnionSet::addShape(Shape *s) {
++            shapes.push_back(s);
++            if(shapes.size() == 1)
++                this->boundingBox = s->getBoundingBox();
++            else
++                this->boundingBox = this->boundingBox.joinWith(s->getBoundingBox());
++        }
++
++        bool UnionSet::intersects(Shape * query)
++        {
++            if (!boundingBoxesIntersect(query)) return false;
++            
++            // Check if either shape intersects
++            for(std::vector<Shape *>::iterator iter = shapes.begin(); iter != shapes.end(); iter++) {
++                if( (*iter)->intersects(query) ) {
++                    return true;
++                }
++            }
++            return false;
++        }
++        
++        bool UnionSet::contains(point query)
++        {
++            for(std::vector<Shape *>::iterator iter = shapes.begin(); iter != shapes.end(); iter++) {
++                if( (*iter)->contains(query) ) {
++                    return true;
++                }
++            }
++            return false;
++        }
++        
++        bool UnionSet::contains(Shape * query)
++        {
++            if (!boundingBoxesIntersect(query)) return false;
++            
++            for(std::vector<Shape *>::iterator iter = shapes.begin(); iter != shapes.end(); iter++) {
++                if( (*iter)->contains(query) ) {
++                    return true;
++                }
++            }
++            return false;
++            
++        }
++        
++        double UnionSet::getVolume(bool reintegrate)
++        {
++            // This uses a Monte-Carlo integrator provided by the Shape base class
++            if(!hasBeenIntegrated && !reintegrate) {
++                hasBeenIntegrated = true;
++                return (storedVolume = this->integrateToPercentThreshold(1.0e-6));
++            } else
++                return storedVolume;
++        }
++        
++    }
++}
+diff --git a/src/c/lm/builder/UnionSet.h b/src/c/lm/builder/UnionSet.h
+new file mode 100644
+index 0000000..632cbfc
+--- /dev/null
++++ b/src/c/lm/builder/UnionSet.h
+@@ -0,0 +1,90 @@
++/*
++ * University of Illinois Open Source License
++ * Copyright 2014-2015 Luthey-Schulten Group,
++ * All rights reserved.
++ *
++ * Developed by: Luthey-Schulten Group
++ *               University of Illinois at Urbana-Champaign
++ *               http://www.scs.uiuc.edu/~schulten
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy of
++ * this software and associated documentation files (the Software), to deal with
++ * the Software without restriction, including without limitation the rights to
++ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
++ * of the Software, and to permit persons to whom the Software is furnished to
++ * do so, subject to the following conditions:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimers.
++ *
++ * - Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * - Neither the names of the Luthey-Schulten Group, University of Illinois at
++ * Urbana-Champaign, nor the names of its contributors may be used to endorse or
++ * promote products derived from this Software without specific prior written
++ * permission.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
++ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ * OTHER DEALINGS WITH THE SOFTWARE.
++ *
++ * Author(s): Joseph R. Peterson
++ */
++
++#ifndef LM_BUILDER_UNIONSET_H_
++#define LM_BUILDER_UNIONSET_H_
++
++#include <vector>
++
++namespace lm {
++    namespace builder {
++        
++        /// @class UnionSet
++        /// @brief A Shape that represents a Union of many shapes
++        class UnionSet : public Shape
++        {
++        public:
++            /// @brief Create a UnionSet
++            /// @param type The type of the sites within the union
++            UnionSet(site_t type);
++            /// @brief Destroy the Sphere
++            virtual ~UnionSet();
++           
++            /// @brief Add a shape to the union
++            /// @param shape A Shape object
++            void addShape(Shape *s);
++ 
++            /// @brief Check if two shapes intersect
++            /// @param query The other shape to check
++            /// @return true/false
++            virtual bool intersects(Shape * query);
++            /// @brief Determine if the shape contains the specified point
++            /// @param query Point to test
++            /// @return true/false
++            virtual bool contains(point query);
++            /// @brief Determine if the shape contains the specified shape
++            /// @param query Shape to test
++            /// @return true/false
++            virtual bool contains(Shape * query);
++            /// @brief Get the volume bounded by the sphere
++            virtual double getVolume(bool reintegrate = false);
++            virtual double getVolume() {
++                return this->getVolume(false);
++            }
++            
++        protected:
++            std::vector<Shape *> shapes;
++            bool hasBeenIntegrated;
++            double storedVolume;
++        };
++        
++    }
++}
++
++#endif /* defined(LM_BUILDER_UNIONSET) */
+diff --git a/src/c/subdir.mk b/src/c/subdir.mk
+index 6965de4..504286c 100644
+--- a/src/c/subdir.mk
++++ b/src/c/subdir.mk
+@@ -42,6 +42,7 @@ OBJS += \
+ ./$(BUILD_DIR)/src/c/lm/builder/Ellipse.o \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cylinder.o \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cone.o \
++./$(BUILD_DIR)/src/c/lm/builder/UnionSet.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/CMESolver.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/FluctuatingNRSolver.o \
+ ./$(BUILD_DIR)/src/c/lm/cme/GillespieDSolver.o \
+@@ -94,6 +95,7 @@ CPP_DEPS += \
+ ./$(BUILD_DIR)/src/c/lm/builder/Torus.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cylinder.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Cone.d \
++./$(BUILD_DIR)/src/c/lm/builder/UnionSet.d \
+ ./$(BUILD_DIR)/src/c/lm/builder/Ellipse.d \
+ ./$(BUILD_DIR)/src/c/lm/cme/CMESolver.d \
+ ./$(BUILD_DIR)/src/c/lm/cme/FluctuatingNRSolver.d \
+diff --git a/src/swig/lm.i b/src/swig/lm.i
+index d87023d..eb48aaf 100644
+--- a/src/swig/lm.i
++++ b/src/swig/lm.i
+@@ -28,6 +28,7 @@
+ #include "lm/builder/Shape.h"
+ #include "lm/builder/Sphere.h"
+ #include "lm/builder/Union.h"
++#include "lm/builder/UnionSet.h"
+ #include "lm/builder/Difference.h"
+ #include "lm/builder/Torus.h"
+ #include "lm/builder/Ellipse.h"
+@@ -489,6 +490,16 @@ public:
+     virtual bool contains(Shape * query);
+ };
+ 
++class UnionSet : public Shape
++{
++public:
++    UnionSet(site_t type);
++    virtual ~UnionSet();
++    void addShape(Shape *s);
++    virtual bool intersects(Shape * query);
++    virtual bool contains(Shape * query);
++};
++
+ class Difference : public Shape
+ {
+ public:
+-- 
+2.15.2 (Apple Git-101.1)
+
+From 88e7d9347b149035649bc2e27084368bf979eaf1 Mon Sep 17 00:00:00 2001
+From: "Joseph R. Peterson" <josuf.the.uf@gmail.com>
+Date: Thu, 20 Apr 2017 12:33:42 -0500
+Subject: [PATCH 23/71] modified:   ../pyLM/CME.py More intelligable error
+ messages.
+
+modified:   PostProcessing.py
+openLMFile no longer creates an HDF5 file if it doesn't already exist.
+
+modified:   __init__.py
+Made the NetworkVisualization module optional (e.g. now igraph/gexf dependencies are optional).
+---
+ src/python/pyLM/CME.py               | 4 ++--
+ src/python/pySTDLM/PostProcessing.py | 6 +++---
+ src/python/pySTDLM/__init__.py       | 9 ++++++++-
+ 3 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/src/python/pyLM/CME.py b/src/python/pyLM/CME.py
+index dd64c64..cbefa7d 100755
+--- a/src/python/pyLM/CME.py
++++ b/src/python/pyLM/CME.py
+@@ -86,7 +86,7 @@ class CMESimulation:
+ 			particleNum=self.particleMap[species]
+ 		except KeyError:
+ 			particleNum=1
+-			LMLogger.warn('In CME.addParticles, couldn\'t find particle of type %s in map (is it previously defined with \'CME.defineSpecies(...)\'?).  Shouldn\'t happen.',species)
++			LMLogger.warn('In CME.addParticles, couldn\'t find particle of type "%s" in map (is it previously defined with \'CME.defineSpecies(...)\'?).  Shouldn\'t happen.',species)
+ 		self.initial_counts[species]+=count
+ 
+ 	## Add a concentration of particles of the specified type to the simulation
+@@ -102,7 +102,7 @@ class CMESimulation:
+ 			particleNum=self.particleMap[species]
+ 		except KeyError:
+ 			particleNum=1
+-			LMLogger.warn('In CME.addConcentration, couldn\'t find particle of type %s in map (is it previously defined with \'CME.defineSpecies(...)\'?).  Shouldn\'t happen.',species)
++			LMLogger.warn('In CME.addConcentration, couldn\'t find particle of type "%s" in map (is it previously defined with \'CME.defineSpecies(...)\'?).  Shouldn\'t happen.',species)
+ 		self.initial_counts[species]= int(round(conc*self.volume*6.022e23))
+ 
+ 
+diff --git a/src/python/pySTDLM/PostProcessing.py b/src/python/pySTDLM/PostProcessing.py
+index e4cfb09..4070695 100644
+--- a/src/python/pySTDLM/PostProcessing.py
++++ b/src/python/pySTDLM/PostProcessing.py
+@@ -55,7 +55,7 @@ from pyLM.LMLogger import *
+ # @param filename Name of the file
+ # @return a handle to the file
+ def openLMFile(filename):
+-	f=h5py.File(filename)
++	f=h5py.File(filename,'r')
+ 	return f
+ 
+ ## Close a Lattice Microbes File
+@@ -155,13 +155,13 @@ def plotTrace(f, species=None, replicate=1, filename=None, **kwargs):
+ 
+ 	# Actually create a figure handl
+ 	fig = plt.figure(1)
++	axs = plt.gca()
+ 
+ 	# Plot the line graph of mean vs. time.
+ 	plt.xlabel("Time (s)")
+ 	plt.ylabel("Number")
+-	plt.hold(True)
+ 	for i in range(traces.shape[1]):
+-		plt.plot(times, traces[:,i], **kwargs)
++		axs.plot(times, traces[:,i], **kwargs)
+ 
+ 	# Add a legend if the species number is > 1
+ 	if hasattr(species, '__iter__') and len(species) > 1:
+diff --git a/src/python/pySTDLM/__init__.py b/src/python/pySTDLM/__init__.py
+index 934d30c..65ab40d 100644
+--- a/src/python/pySTDLM/__init__.py
++++ b/src/python/pySTDLM/__init__.py
+@@ -39,9 +39,16 @@
+ #
+ 
+ import lm
++from pyLM.LMLogger import LMLogger
+ 
+ ##
+ # @package pySTDLM A standard library of functionality that is commonly used in biological simulations.  Three sets of functionality exist including "StandardReactions" which include standard reactions such as Michealis-Menton, membrane transport, transporters, etc.  "StandardReactionSystems" includes published reaction systems from a variety of cells including the MinDE system, Lac switch systems in E. coli etc.  Finally, "StandardCells" includes a number of standard cell geometries.
+ 
+-__all__ = ['StandardReactions', 'StandardReactionSystems', 'StandardCells', 'Cells', 'CellArranger', 'Distributions', 'PostProcessing', 'NetworkVisualization']
++__all__ = ['StandardReactions', 'StandardReactionSystems', 'StandardCells', 'Cells', 'CellArranger', 'Distributions', 'PostProcessing']
++
++try:
++    import NetworkVisualization
++except:
++    LMLogger.warn("The NetworkVisualization tools couldn't be imported. This is most likely due to a dependency issue with optional packages 'gexf' or 'igraph'.")
++
+ 
+-- 
+2.15.2 (Apple Git-101.1)
+
