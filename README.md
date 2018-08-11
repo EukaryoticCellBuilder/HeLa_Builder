@@ -1,5 +1,5 @@
 # HeLa Cell
-This repository will be private while the related manuscript is under reviewing process. The files can be accessed at:
+**This repository will be private while the related manuscript is under reviewing process. The files can be accessed at:**
 
 https://uofi.box.com/s/8lgqrkzjgq2d0aan3dbae2pnswyoz6yb
 
