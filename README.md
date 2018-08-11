@@ -1,6 +1,6 @@
 # HeLa Cell
 This repository will be private while the related manuscript is under reviewing process. The files can be accessed at:
-https://uofi.app.box.com/folder/52397779065
+https://uofi.box.com/s/8lgqrkzjgq2d0aan3dbae2pnswyoz6yb
 
 Code to automatically generate HeLa cells for [Lattice Microbes](http://www.scs.illinois.edu/schulten/lm/index.html).
 
