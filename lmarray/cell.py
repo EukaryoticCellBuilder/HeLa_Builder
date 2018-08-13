@@ -253,13 +253,6 @@ class Cell(object):
                     localParameters[k] = v
 
                 sim = self.templateRDME()
-                
-                # Apply geometry model
-                if self.geometryModelFxn != None:
-                    geomParamMap = getParameterSet(self.geometryModelFxn, self.defaultParameters)
-                    for k, v in getParameterSet(self.geometryModelFxn, localParameters).items():
-                        geomParamMap[k] = v
-                    self.geometryModelFxn(sim, **geomParamMap)
 
                 # Apply reaction model
                 if self.reactionModelFxn != None:
@@ -282,6 +275,13 @@ class Cell(object):
                         partParamMap[k] = v
                     self.particleModelFxn(sim, **partParamMap)
            
+                # Apply geometry model
+                if self.geometryModelFxn != None:
+                    geomParamMap = getParameterSet(self.geometryModelFxn, self.defaultParameters)
+                    for k, v in getParameterSet(self.geometryModelFxn, localParameters).items():
+                        geomParamMap[k] = v
+                    self.geometryModelFxn(sim, **geomParamMap)
+
                 # Save the file
                 localFilename = filename + "_" + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8)) + ".lm"
                 sim.save(localFilename)
@@ -296,11 +296,6 @@ class Cell(object):
             print("Creating simulation file.")
             sim = self.templateRDME()
             
-            # Apply geometry model
-            if self.geometryModelFxn != None:
-                geomParamMap = getParameterSet(self.geometryModelFxn, self.defaultParameters)
-                self.geometryModelFxn(sim, **geomParamMap)
-
             # Apply reaction model
             if self.reactionModelFxn != None:
                 rxnParamMap = getParameterSet(self.reactionModelFxn, self.defaultParameters)
@@ -316,6 +311,11 @@ class Cell(object):
                 partParamMap = getParameterSet(self.particleModelFxn, self.defaultParameters)
                 self.particleModelFxn(sim, **partParamMap)
            
+            # Apply geometry model
+            if self.geometryModelFxn != None:
+                geomParamMap = getParameterSet(self.geometryModelFxn, self.defaultParameters)
+                self.geometryModelFxn(sim, **geomParamMap)
+
             # Save the file
             sim.save(filename + ".lm")
             print("Done")
