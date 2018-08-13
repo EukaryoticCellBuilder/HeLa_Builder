@@ -121,12 +121,13 @@ def geometryModel(sim,
                   poreRadius=micron(0.083),
                   n_cajals=4,
                   n_speckles=20,
-                  n_NPCs=1818,
+                  n_NPCs=1515,
                   n_mito=2000,
                   fb = 0.9,
                   fd = 0.8,
                   steps=11,
                   lsize=288,
+                  buildER=True,
                   limits=[lambda x: x<= 65.0**2,lambda x: x> 139.0**2]
     ):
 
@@ -364,20 +365,22 @@ def geometryModel(sim,
 
     ######################### ER #########################################
     print("Building ER")
-    deathLimitFxn  = lambda s: int(fd*27*(steps-0.25*s)**2/steps**2)
-    birthNumberFxn = lambda s: int(fb*27) 
-    im = createERCellularAutomaton(lsize, 
-                                   dimensions=3,
-                                   survivalRate=0.85, 
-                                   deathLimitFxn  = deathLimitFxn,
-                                   birthNumberFxn = birthNumberFxn, 
-                                   steps=steps,
-                                   limits = limits)
-    
-    # Save the grid to a 3D lattice as a numpy array; this can be loaded with np.load()
-    np.save("ER.npy", np.array(im, dtype="float"))
-    print("Done building ER")
 
+    if buildER:
+        deathLimitFxn  = lambda s: int(fd*27*(steps-0.25*s)**2/steps**2)
+        birthNumberFxn = lambda s: int(fb*27) 
+        im = createERCellularAutomaton(lsize, 
+                                        dimensions=3,
+                                       survivalRate=0.85, 
+                                       deathLimitFxn  = deathLimitFxn,
+                                       birthNumberFxn = birthNumberFxn, 
+                                       steps=steps,
+                                       limits = limits)
+        
+        # Save the grid to a 3D lattice as a numpy array; this can be loaded with np.load()
+        np.save("ER.npy", np.array(im, dtype="float"))
+        print("Done building ER")
+     
     print("Loading ER")
     ER = np.load ("ER.npy")
     print("Discretizing")
@@ -389,6 +392,6 @@ def geometryModel(sim,
                 idx = (x,y,z)
                 if ER[x,y,z]:
                     sim.setLatticeSite(idx, "ER")
-
+ 
     print("ER Done")
-
+ 

@@ -29,7 +29,7 @@ def reactionModel(sim,
     nucleus.addReaction(reactant=('premRNA', 'S'), product='SpremRNA', rate= Kon)
     nucleus.addReaction(reactant=('SpremRNA'), product=('premRNA', 'S'), rate= Koff)
     nucleus.addReaction(reactant=('SpremRNA'), product=('S', 'mRNA'), rate= Ksplice) 
-
+    print("Reactions are set!")
     
 def particleModel(sim,
                   n_gene=200,
@@ -48,4 +48,5 @@ def particleModel(sim,
     sim.addParticles(species='S', region='Nucleus', count= n_S)
     sim.addParticles(species='SpremRNA', region='Nucleus', count=n_SpremRNA)
     sim.addParticles(species='mRNA', region='Nucleus', count=n_mRNA)
-
+    
+    print("Particles were added!")

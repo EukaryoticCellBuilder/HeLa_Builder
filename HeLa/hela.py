@@ -9,12 +9,13 @@ import lmarray
 
 # Import functions just for this simulation
 from hela_geometry import geometryModel
-from reactions import reactionModel, particleModel
+from reactions import reactionModel
+from reactions import particleModel
 from diffusion import diffusionModel
 
 
 # Filename
-filename =  "HeLa-Cell"
+filename =  "HeLa-full"
 
 #######################
 # Template Simulation #
@@ -23,7 +24,7 @@ print("Creating Species...")
 def initRDME():
     latticeSpacing = 64 # nm
     Dfastest = 6.1e-13 # The fastest diffusion coefficint is required for the calculation of the timestep
-    Tsim = 900 # Simulation time in seconds
+    Tsim = 15 # Simulation time in seconds
     sim = RDMESimulation(dimensions=micron(18.432, 18.432, 18.432), # Dimensions correspond to the 18-um HeLa cell 
                          spacing=nm(latticeSpacing), 
                          defaultRegion='extra')
@@ -65,16 +66,16 @@ def initRDME():
 ########################
 print("Creating HeLa cell...")
 cell = lmarray.Cell(initRDME)
+cell.setGeometryModel(geometryModel)
 cell.setReactionModel(reactionModel)
 cell.setDiffusionModel(diffusionModel)
-cell.setGeometryModel(geometryModel)
 cell.setParticleCounts(particleModel)
 
 
 # Save simulation
 # Geometrical parameters can change, e.g. adding {"nuclSize":[micron(3)]} after file name generate a cell with a nucleus size of 3 um
 print("Creating simulation file...")
-savedFile = cell.generateLMFiles(filename)
+savedFile = cell.generateLMFiles(filename, {"buildER":[True]})
 
 print("Done. Created:",savedFile)
 

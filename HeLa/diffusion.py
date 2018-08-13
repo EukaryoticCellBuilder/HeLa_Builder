@@ -43,5 +43,5 @@ def diffusionModel(sim,
 
     sim.setTwoWayTransitionRate(species='mRNA', one='Nucleus', two='Speckle', rate= d_mRNA)
     sim.setTwoWayTransitionRate(species='mRNA', one='Speckle', two='Nucleus', rate= d_mRNA)
-	
+    print ("Diffusions are set!")	
 	
