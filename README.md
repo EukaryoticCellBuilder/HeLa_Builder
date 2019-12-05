@@ -27,7 +27,7 @@ No additional dependencies above those required by Lattice Microbes and pyLM are
 The documentation can then be accessed via:
 
 ```bash
-  <webbrowser> _build/html/index.html
+  <webbrowser> docs/_build/html/index.html
 ```
 
 
