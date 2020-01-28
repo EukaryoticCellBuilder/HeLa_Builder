@@ -9,6 +9,8 @@ The details of the model construction can be found in the publication: Ghaemi et
 
 NOTE: The code requires Python version 3.6+.
 
+Any questions about using/modifying the code can be addressd to: Zhaleh Ghaemi ghaemi@illinois.edu
+
 ## Installation
 Install [Lattice Microbes & pyLM](http://www.scs.illinois.edu/schulten/lm/index.html). Then apply the patch code:`pylm-builder.patch` in the Main folder by executing:
 
