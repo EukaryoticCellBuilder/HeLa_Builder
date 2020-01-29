@@ -18,7 +18,7 @@ def createERCellularAutomaton(size,
     dimensions - dimensionality of the lattice (1, 2, or 3)
     survivalRate - the rate of survival; a function that takes the step and returns a number (2D: 0-9, 3D: 0-27)
     limits - A list of functions; a function that takes the step number and returns a birth number (2D: 0-9, 3D: 0-27)
-    steps - Number of iterations of the "game"
+    steps - number of iterations of the "game"
     '''
     # Generate lattices objects
     print("Creating grids")
@@ -130,8 +130,28 @@ def geometryModel(sim,
                   buildER=True,
                   limits=[lambda x: x<= 65.0**2,lambda x: x> 139.0**2]
     ):
+    '''
+    all length units are in micrometers
+    Definition of the parameters:
+    cellCenter - the coordinates of the center of the cell in simulation box
+    membraneThickness - the thickness of the plasma membrane
+    nuclSize - the radius of the spherical nucleus
+    speckleRadius - the radius of the individual speckles 
+    cajalRadius - the radius of the individual Cajal bodies
+    poreRadius - The radius of the individual nuclear pore complexes (NPCs)
+    n_cajals - number of Cajal bodies implemented as spheres
+    n_speckles - number of nuclear speckles implemented as spheres
+    n_NPCs - number of NPCs on the nuclear envelope
+    n_mito - number of mitochondria implemented as spherocylinders
+    fb - birth threshold in the cellular automata algorithm for the ER generation
+    fd - death threshold in the cellular automata algorithm for the ER generation
+    steps - number of steps in the cellular automata algorithm for the ER generation
+    lsize - size of the total simulation lattice in the cellular automata algorithm for the ER generation
+    buildER - specify whether or not generate a new ER lattice or use an existing one
+    limits - the upper and lower boundaries determining where ER should fit
+    '''
 
-    # Create cell components
+    ################ Create cell components ##########################
     CellWall  = lm.Sphere(cellCenter, cellRadius, sim.siteTypes['CellWall'])
     Cytoplasm = lm.Sphere(cellCenter, cellRadius-membraneThickness, sim.siteTypes['Cytoplasm'])             
     NucEnv    = lm.Sphere(cellCenter, nuclSize, sim.siteTypes['NucEnv'])
@@ -141,7 +161,7 @@ def geometryModel(sim,
     NucEnv.thisown = 0
     Nucleus.thisown = 0
 
-    ###### Cajal body: "n_cajal" with radius "cajalRadius" #############################
+    ################ Cajal body: "n_cajal" with radius "cajalRadius" #############################
     dist = [] ; listdist = []
     Cajalpre = []
     accepted = []
@@ -232,7 +252,7 @@ def geometryModel(sim,
         Speckle.addShape(q)
     print("Speckles done!")
 
-    ################# NPC #########################
+    ################# NPC: with the number of "n_NPCs" #########################
     NPCpre = []
     taken = 0
 
@@ -311,7 +331,7 @@ def geometryModel(sim,
     Golgi.thisown = 0
     print("Golgi done!")
 
-    ######################## Mitochondria ###############################3
+    ######################## Mitochondria with number of "n_mito" ###############################3
     mit = []
     pp1 = []
     pp2 = []
@@ -352,7 +372,7 @@ def geometryModel(sim,
 
 
 
-    # Add all geometries to the simulation
+    # Add all geometries to the simulation box
     sim.lm_builder.addRegion(CellWall)
     sim.lm_builder.addRegion(Cytoplasm)
     sim.lm_builder.addRegion(NucEnv)
@@ -363,7 +383,7 @@ def geometryModel(sim,
     sim.lm_builder.addRegion(Mito)
     sim.lm_builder.addRegion(Golgi)
 
-    ######################### ER #########################################
+    ######################### ER with parameters described above #########################################
     print("Building ER")
 
     if buildER:
