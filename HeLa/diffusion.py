@@ -1,6 +1,7 @@
 
 
 def diffusionModel(sim,
+		   # Define parameters for diffusion coefficients of each species in unit of m^2/s
                    d_premRNA = 6.1e-13,
                    d_S = 2.6e-13,
                    d_SpremRNA = 2.6e-13,
@@ -30,7 +31,8 @@ def diffusionModel(sim,
     nucleus.setDiffusionRate(species='mRNA', rate= d_mRNA)   
     speckle.setDiffusionRate(species='mRNA', rate= d_mRNA)   
 
-    #setTwoWayTransitionRate
+    # setTwoWayTransitionRate: when species during the simulation pass through the boundary of two regions, a transition rate 
+    # between the two regions should be defined which corresponds to the off-diagonal terms of the diffusion matrix 
 
     sim.setTwoWayTransitionRate(species='premRNA', one='Nucleus', two='Speckle', rate= d_premRNA)
     sim.setTwoWayTransitionRate(species='premRNA', one='Speckle', two='Nucleus', rate= 0.01*d_premRNA)
