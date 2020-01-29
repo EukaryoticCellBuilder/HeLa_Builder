@@ -24,7 +24,7 @@ print("Creating Species...")
 def initRDME():
     latticeSpacing = 64 # nm
     Dfastest = 6.1e-13 # The fastest diffusion coefficint is required for the calculation of the timestep
-    Tsim = 15 # Simulation time in seconds
+    Tsim = 15 # Desired simulation time in seconds
     sim = RDMESimulation(dimensions=micron(18.432, 18.432, 18.432), # Dimensions correspond to the 18-um HeLa cell 
                          spacing=nm(latticeSpacing), 
                          defaultRegion='extra')
@@ -33,20 +33,20 @@ def initRDME():
     dt = (nm(latticeSpacing)**2)/(2*Dfastest)  
     print('dt =', dt)
     sim.setTimestep(dt)
-    sim.setWriteInterval(10*dt) # Write interval of species
-    sim.setLatticeWriteInterval(100*dt) # Write interval of the full lattice 
+    sim.setWriteInterval(10*dt) # Write interval for species counts during the simulation
+    sim.setLatticeWriteInterval(100*dt) # Write interval of the full lattice (geometry + counts) during the simulation
     sim.setSimulationTime(Tsim) 
     
     ###################
-    # Specify Species #
+    # Define Species #
     ###################
     print("Defining Species...")
     species = ['gene','premRNA','S','SpremRNA','mRNA']
     sim.defineSpecies(species)
 
-    ###########
-    # Regions #
-    ###########
+    #################
+    # Define Rgions #
+    #################
     print("Definition regions...")
     sim.addRegion('CellWall')
     sim.addRegion('Cytoplasm')
@@ -73,7 +73,8 @@ cell.setParticleCounts(particleModel)
 
 
 # Save simulation
-# Geometrical parameters can change, e.g. adding {"nuclSize":[micron(3)]} after file name generate a cell with a nucleus size of 3 um
+# All geometrical parameters defined in hela_geometry can be tuned: 
+# e.g. adding {"nuclSize":[micron(3)]} after file name generate a cell with a nucleus size of 3 um
 print("Creating simulation file...")
 savedFile = cell.generateLMFiles(filename, {"buildER":[True]})
 
