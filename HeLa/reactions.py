@@ -1,15 +1,18 @@
 
 
 def reactionModel(sim,
+                  # Reaction rates 
                   Ktr=0.0034,
                   Kon=4.66e7,
                   Koff=0.062,
                   Ksplice=0.05
                   ):
     
-    ##########################
+    ###################################################################
     # Adjust rates by volume #
-    ##########################
+    # The reaction rates have to be in the unit of 1/s. 
+    # Therefore, in most cases the experimental rates have to be scaled.
+    ####################################################################
     scale = 157863.12  # = 6.022e23 * 64^3 e-24
 
     Kon = Kon/scale
@@ -39,9 +42,9 @@ def particleModel(sim,
                   n_SpremRNA=0
                   ):
 
-    ####################
-    # Add all Species #
-    ###################
+    ###################################################
+    # Add all Species with their corresponding counts #
+    ###################################################
 
     sim.addParticles(species='gene', region='Nucleus', count= n_gene)  
     sim.addParticles(species='premRNA', region='Nucleus', count= n_premRNA)
