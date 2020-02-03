@@ -1,6 +1,6 @@
 # HeLa Cell
 
-Code to automatically generate HeLa cells for [Lattice Microbes](http://www.scs.illinois.edu/schulten/lm/index.html).
+Code to automatically generate HeLa cells for [Lattice Microbes](http://faculty.scs.illinois.edu/schulten/Software2.0.html).
 
 ## About
 The HeLa package is designed to provide the constructed HeLa cell model for spatial simulations for use with Lattice Microbes software. It allows customization of the cell geometry and can be adapted to add or remove organelles and compartments. In addition, arbitrary cellular processes in the frame of reaction-diffusion master equations can be studied within the HeLa cell geometry by adding the appropriate reaction and diffusion models. Its chief function is to generate arrays of input files with varying initial conditions in a Pythonic fashion.
@@ -12,7 +12,7 @@ NOTE: The code requires Python version 3.6+.
 Any questions about using/modifying the code can be addressd to: Zhaleh Ghaemi ghaemi@illinois.edu
 
 ## Installation
-Install [Lattice Microbes & pyLM](http://www.scs.illinois.edu/schulten/lm/index.html). Then apply the patch code:`pylm-builder.patch` in the Main folder by executing:
+Install [Lattice Microbes & pyLM](http://faculty.scs.illinois.edu/schulten/Software2.0.html). Then apply the patch code:`pylm-builder.patch` in the Main folder by executing:
 
 ``` bash
     git apply pylm-builder.patch
