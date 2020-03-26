@@ -37,9 +37,9 @@ To start the reaction-diffusion master equation (RDME) simulations using Lattice
 ```
 This command runs one replica (r) of the RDME simulation on the generated cell (cell.lm) using 8 CPU and 8 GPU cores
 
-## The HeLa model Documentation
+## The full HeLa model Documentation
 
-The documentation can then be accessed via:
+The full documentation can then be accessed via:
 
 ```bash
   <webbrowser> docs/_build/html/index.html
