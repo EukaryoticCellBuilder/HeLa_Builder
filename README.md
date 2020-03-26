@@ -23,6 +23,19 @@ No additional dependencies above those required by Lattice Microbes and pyLM are
 ```bash
   python setup.py install
 ```
+## Quick documentation
+
+To generate the cell model:
+
+```bash
+   $python Hela/hela.py
+```
+To start the reaction-diffusion master equation (RDME) simulations using Lattice Microbes (lm): 
+
+```bash
+   $lm -r 1 -sp -sl lm::rdme::MpdRdmeSolver -cr 8 -gr 8 -f cell.lm 
+```
+This command runs one replica (r) of the RDME simulation on the generated cell (cell.lm) using 8 CPU and 8 GPU cores
 
 ## The HeLa model Documentation
 
